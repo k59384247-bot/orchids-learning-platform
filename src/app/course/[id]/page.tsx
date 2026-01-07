@@ -20,7 +20,7 @@ import {
   Upload,
   Plus,
   PanelLeft,
-  PanelRight,
+  Cuboid,
   Menu,
   FileText
 } from "lucide-react"
@@ -30,6 +30,13 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { supabase, Chunk, Course } from "@/lib/supabase"
 import type { ImperativePanelHandle } from "react-resizable-panels"
 
@@ -254,10 +261,10 @@ function DocumentOutline({
   isCollapsed?: boolean
 }) {
   return (
-    <div className={`h-full flex flex-col bg-background border-r border-border/40 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)] z-10 transition-all duration-140 ${isCollapsed ? "w-[64px]" : ""}`}>
-      <div className={`p-4 border-b border-border/40 flex items-center bg-surface/30 ${isCollapsed ? "justify-center" : "justify-between"}`}>
+    <div className={`h-full flex flex-col bg-elevated rounded-xl border border-border/40 shadow-lg m-2 z-10 transition-all duration-140 ${isCollapsed ? "w-[64px]" : ""}`}>
+      <div className={`p-4 border-b border-border/40 flex items-center bg-surface/30 rounded-t-xl ${isCollapsed ? "justify-center" : "justify-between"}`}>
         <div className="flex items-center gap-2">
-          <FileText className="w-4 h-4 text-sage" />
+          <Menu className="w-4 h-4 text-sage" />
           {!isCollapsed && <h3 className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Outline</h3>}
         </div>
         {!isCollapsed && (
@@ -311,11 +318,11 @@ function VisualPanel({
   const [isPlaying, setIsPlaying] = useState(true)
 
   return (
-    <div className={`h-full bg-background border-l border-border/40 shadow-[-4px_0_24px_-12px_rgba(0,0,0,0.1)] z-10 flex flex-col overflow-hidden transition-all duration-140 ${isCollapsed ? "w-[64px]" : ""}`}>
-      <div className={`p-4 border-b border-border/40 flex items-center bg-surface/30 ${isCollapsed ? "justify-center" : "justify-between"}`}>
+    <div className={`h-full flex flex-col bg-elevated rounded-xl border border-border/40 shadow-lg m-2 z-10 overflow-hidden transition-all duration-140 ${isCollapsed ? "w-[64px]" : ""}`}>
+      <div className={`p-4 border-b border-border/40 flex items-center bg-surface/30 rounded-t-xl ${isCollapsed ? "justify-center" : "justify-between"}`}>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-sage" />
+            <Cuboid className="w-4 h-4 text-sage" />
             {!isCollapsed && (
               <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
                 Visual Context
@@ -524,6 +531,10 @@ export default function CourseWorkspacePage() {
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
   const [isNavHovered, setIsNavHovered] = useState(false)
+  const [showSimplified, setShowSimplified] = useState(true)
+  const [tempTitle, setTempTitle] = useState("")
+  const [isSavingTitle, setIsSavingTitle] = useState(false)
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false)
   
   const chunkRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -594,6 +605,7 @@ export default function CourseWorkspacePage() {
 
     if (courseData) {
       setCourse(courseData)
+      setTempTitle(courseData.title)
     }
 
     const { data: docs } = await supabase
@@ -727,6 +739,29 @@ export default function CourseWorkspacePage() {
     setToolbarPosition(null)
   }
 
+  const handleUpdateTitle = async () => {
+    if (!tempTitle.trim() || tempTitle === course?.title) {
+      setIsPopoverOpen(false)
+      return
+    }
+
+    setIsSavingTitle(true)
+    const { data, error } = await supabase
+      .from("courses")
+      .update({ title: tempTitle })
+      .eq("id", courseId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error("Error updating title:", error)
+    } else if (data) {
+      setCourse(data)
+    }
+    setIsSavingTitle(false)
+    setIsPopoverOpen(false)
+  }
+
   const scrollToChunk = (index: number) => {
     const chunkId = chunks[index].id
     const element = chunkRefs.current.get(chunkId)
@@ -782,7 +817,7 @@ export default function CourseWorkspacePage() {
             onClick={() => setLeftPanelOpen(!leftPanelOpen)}
             title="Document Outline"
           >
-            <PanelLeft className="w-4 h-4" />
+            <Menu className="w-4 h-4" />
           </Button>
           <div className="w-px h-4 bg-border/50 hidden md:block" />
           <Link
@@ -793,11 +828,63 @@ export default function CourseWorkspacePage() {
             <span className="hidden md:inline">Dashboard</span>
           </Link>
         </div>
-        <div className="flex-1 text-center px-2">
-          <h1 className="text-xs md:text-sm font-semibold text-foreground/90 truncate max-w-[150px] md:max-w-md mx-auto">
-            {course?.title || "Course Workspace"}
-          </h1>
-        </div>
+          <div className="flex-1 text-center px-2 flex justify-center">
+            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+              <PopoverTrigger asChild>
+                <button className="group flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-surface/60 transition-all max-w-[200px] md:max-w-md mx-auto">
+                  <h1 className="text-xs md:text-sm font-semibold text-foreground/90 truncate">
+                    {course?.title || "Course Workspace"}
+                  </h1>
+                  <span className="opacity-0 group-hover:opacity-40 transition-opacity">
+                    <Plus className="w-3 h-3 rotate-45" />
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-4 bg-elevated border-border/40 shadow-xl" align="center">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Workspace Name
+                    </Label>
+                    <Input
+                      id="title"
+                      value={tempTitle}
+                      onChange={(e) => setTempTitle(e.target.value)}
+                      placeholder="Enter workspace name..."
+                      className="bg-surface/50 border-border/40 focus:ring-sage/20 focus:border-sage/30 h-10"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleUpdateTitle()
+                        if (e.key === "Escape") setIsPopoverOpen(false)
+                      }}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2 border-t border-border/20">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        setTempTitle(course?.title || "")
+                        setIsPopoverOpen(false)
+                      }}
+                      className="text-xs h-8"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={handleUpdateTitle}
+                      disabled={isSavingTitle || !tempTitle.trim() || tempTitle === course?.title}
+                      className="bg-sage hover:bg-sage/90 text-sage-foreground text-xs h-8 px-4"
+                    >
+                      {isSavingTitle ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
         <div className="flex items-center gap-2 md:gap-4">
           <div className="h-2 w-16 md:w-32 bg-surface rounded-full overflow-hidden border border-border/50 hidden sm:block">
             <div
@@ -806,15 +893,15 @@ export default function CourseWorkspacePage() {
             />
           </div>
           <div className="w-px h-4 bg-border/50 hidden md:block" />
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className={`h-9 w-9 rounded-xl transition-all ${visualPanelOpen ? 'bg-sage/10 text-sage' : 'text-muted-foreground'}`}
-            onClick={() => setVisualPanelOpen(!visualPanelOpen)}
-            title="Visual Context"
-          >
-            <PanelRight className="w-4 h-4" />
-          </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={`h-9 w-9 rounded-xl transition-all ${visualPanelOpen ? 'bg-sage/10 text-sage' : 'text-muted-foreground'}`}
+              onClick={() => setVisualPanelOpen(!visualPanelOpen)}
+              title="Visual Context"
+            >
+              <Cuboid className="w-4 h-4" />
+            </Button>
         </div>
       </header>
 
@@ -892,9 +979,28 @@ export default function CourseWorkspacePage() {
             <ResizablePanel defaultSize={60} minSize={30}>
               <main 
                 ref={scrollContainerRef}
-                className="h-full overflow-y-auto scroll-smooth custom-scrollbar bg-elevated"
+                className="h-full overflow-y-auto scroll-smooth custom-scrollbar bg-background p-6"
               >
-                <div className="max-w-[800px] mx-auto px-6 md:px-12 py-12 md:py-24 space-y-16 md:space-y-24">
+                <div className="max-w-[850px] mx-auto bg-elevated rounded-2xl border border-border/40 shadow-sm p-8 md:p-12 min-h-full">
+                  <div className="flex items-center justify-center gap-2 mb-12">
+                    <Button
+                      variant={showSimplified ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setShowSimplified(true)}
+                      className={`rounded-full px-6 transition-all ${showSimplified ? "bg-sage text-sage-foreground shadow-md" : "text-muted-foreground"}`}
+                    >
+                      Simplified
+                    </Button>
+                    <Button
+                      variant={!showSimplified ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setShowSimplified(false)}
+                      className={`rounded-full px-6 transition-all ${!showSimplified ? "bg-sage text-sage-foreground shadow-md" : "text-muted-foreground"}`}
+                    >
+                      Original
+                    </Button>
+                  </div>
+
                   {chunks.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 text-center">
                       <div className="w-20 h-20 bg-sage/5 rounded-3xl border border-sage/10 flex items-center justify-center mb-8">

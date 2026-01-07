@@ -15,10 +15,10 @@ import {
 import { Button } from "@/components/ui/button"
 
 const universities = [
-  { name: "MIT", logo: "/logos/mit.svg" },
-  { name: "Stanford", logo: "/logos/stanford.svg" },
-  { name: "Harvard", logo: "/logos/harvard.svg" },
-  { name: "Oxford", logo: "/logos/oxford.svg" }
+  { name: "MIT", logo: "https://upload.wikimedia.org/wikipedia/commons/0/0c/MIT_logo.svg" },
+  { name: "Stanford", logo: "https://upload.wikimedia.org/wikipedia/commons/b/b5/Stanford_University_logo.svg" },
+  { name: "Harvard", logo: "https://upload.wikimedia.org/wikipedia/commons/7/70/Harvard_University_logo.svg" },
+  { name: "Oxford", logo: "https://upload.wikimedia.org/wikipedia/commons/f/ff/Oxford-University-Circlet.svg" }
 ]
 
 function AnimatedDiagram() {
@@ -123,13 +123,24 @@ export default function LandingPage() {
             </div>
             <div className="mt-[48px]">
               <p className="text-[12px] font-medium text-muted-foreground uppercase tracking-wider mb-4">Used by students at</p>
-              <div className="flex items-center gap-[16px]">
-                {["MIT", "Stanford", "Harvard", "Oxford"].map((uni) => (
-                  <div key={uni} className="w-[80px] h-8 bg-muted/50 rounded flex items-center justify-center text-[10px] font-bold text-muted-foreground grayscale opacity-80">
-                    {uni}
-                  </div>
-                ))}
-              </div>
+                <div className="flex items-center gap-[16px]">
+                    {universities.map((uni) => (
+                      <div key={uni.name} className="h-10 flex items-center gap-2.5 px-4 text-[11px] font-bold text-muted-foreground">
+                        {uni.name === "Stanford" ? (
+                          <svg className="w-5 h-5 grayscale opacity-70" viewBox="0 0 32 32" fill="currentColor">
+                            <path d="M16 0C7.163 0 0 7.163 0 16s7.163 16 16 16 16-7.163 16-16S24.837 0 16 0zm0 2c7.732 0 14 6.268 14 14s-6.268 14-14 14S2 23.732 2 16 8.268 2 16 2zm-1.5 6v4.5H10v3h4.5V20h3v-4.5H22v-3h-4.5V8h-3z"/>
+                          </svg>
+                        ) : (
+                          <img 
+                            src={uni.logo} 
+                            alt={`${uni.name} logo`} 
+                            className="w-5 h-5 object-contain grayscale opacity-70" 
+                          />
+                        )}
+                        {uni.name}
+                      </div>
+                    ))}
+                </div>
             </div>
           </motion.div>
           <motion.div
