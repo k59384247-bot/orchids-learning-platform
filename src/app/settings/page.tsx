@@ -141,13 +141,13 @@ export default function SettingsPage() {
                     </div>
                   </div>
   
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className={`p-4 rounded-lg border-2 transition-colors cursor-pointer ${
-                      theme === "light" ? "border-sage bg-[#fdf6e3]" : "border-transparent bg-surface"
-                    }`} onClick={() => setTheme("light")}>
-                      <div className="h-16 rounded bg-[#ddd6c1] mb-2" />
-                      <p className="text-xs text-muted-foreground">Light Mode</p>
-                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className={`p-4 rounded-lg border-2 transition-colors cursor-pointer ${
+                        theme === "light" ? "border-sage bg-[#FFFFFF]" : "border-transparent bg-surface"
+                      }`} onClick={() => setTheme("light")}>
+                        <div className="h-16 rounded bg-[#F7F1EA] mb-2" />
+                        <p className="text-xs text-muted-foreground">Light Mode</p>
+                      </div>
                     <div className={`p-4 rounded-lg border-2 transition-colors cursor-pointer ${
                       theme === "dark" ? "border-sage bg-[#1B2320]" : "border-transparent bg-surface"
                     }`} onClick={() => setTheme("dark")}>
