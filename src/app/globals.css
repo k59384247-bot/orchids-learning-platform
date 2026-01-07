@@ -221,12 +221,14 @@ nextjs-portal {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--elevated);
+  background: var(--border);
+  opacity: 0.2;
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--border-subtle);
+  background: var(--muted-foreground);
+  opacity: 0.5;
 }
 
 /* For hiding scrollbars while allowing scroll */

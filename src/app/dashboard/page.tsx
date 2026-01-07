@@ -100,9 +100,9 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: strin
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4, boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}
+      whileHover={{ y: -4, boxShadow: "0 12px 32px rgba(0,0,0,0.08)" }}
       transition={{ duration: 0.2 }}
-      className="bg-elevated rounded-xl border border-border p-6 cursor-pointer group"
+      className="bg-elevated rounded-xl border border-border/40 p-6 cursor-pointer group shadow-sm hover:shadow-md transition-shadow"
       onClick={() => router.push(`/course/${course.id}`)}
     >
       <div className="flex items-start justify-between mb-4">
@@ -274,13 +274,21 @@ function EmptyState() {
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel 
           defaultSize={20} 
-          minSize={15} 
+          minSize={5} 
           maxSize={30}
-          className={`bg-surface border-r border-border flex flex-col transition-all duration-300 ${
+          collapsible={true}
+          onResize={(size) => {
+            if (size < 12) {
+              setSidebarCollapsed(true)
+            } else {
+              setSidebarCollapsed(false)
+            }
+          }}
+          className={`bg-surface border-r border-border/40 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)] z-10 flex flex-col transition-all duration-140 ${
             sidebarCollapsed ? "min-w-[64px] max-w-[64px]" : ""
           }`}
         >
-            <div className="p-4 border-b border-border flex items-center justify-between">
+            <div className="p-4 border-b border-border/40 flex items-center justify-between">
               {!sidebarCollapsed && (
                 <Link href="/" className="text-xl font-semibold text-foreground">
                   Cognify
@@ -318,7 +326,7 @@ function EmptyState() {
             </Link>
           </nav>
   
-          <div className="p-2 border-t border-border">
+          <div className="p-2 border-t border-border/40">
             <Button 
               variant="ghost" 
               className={`w-full justify-start gap-3 text-muted-foreground hover:text-foreground ${sidebarCollapsed ? "px-2" : ""}`}
@@ -330,7 +338,7 @@ function EmptyState() {
           </div>
         </ResizablePanel>
 
-        <ResizableHandle withHandle />
+        <ResizableHandle />
 
         <ResizablePanel defaultSize={80}>
           <main className="h-full overflow-y-auto p-8">

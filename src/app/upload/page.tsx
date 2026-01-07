@@ -196,206 +196,206 @@ type UploadState = "idle" | "selected" | "processing" | "error" | "complete"
             Upload a file to transform it into simplified learning materials
           </p>
 
-          <AnimatePresence mode="wait">
-            {uploadState === "idle" && (
-              <motion.div
-                key="dropzone"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className={`border-2 border-dashed rounded-xl p-16 text-center transition-all duration-200 cursor-pointer ${
-                  isDragging 
-                    ? "border-sage bg-sage/10" 
-                    : "border-border hover:border-sage/50"
-                }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => document.getElementById("file-input")?.click()}
-              >
-                <input
-                  id="file-input"
-                  type="file"
-                  accept=".pdf,.txt,.doc,.docx,.md"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <Upload className={`w-16 h-16 mx-auto mb-4 ${isDragging ? "text-sage" : "text-muted-foreground"}`} />
-                <p className="text-lg font-medium mb-2">
-                  Drag file here or click to browse
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Supports PDF, TXT, DOCX, and Markdown up to 100MB
-                </p>
-              </motion.div>
-            )}
-
-            {uploadState === "selected" && (
-              <motion.div
-                key="selected"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-6"
-              >
-                <div className="bg-elevated rounded-xl border border-border p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-sage/10 rounded-lg flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-sage" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{file?.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {file && formatFileSize(file.size)}
-                      </p>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={handleReset}>
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="bg-elevated rounded-xl border border-border p-6 space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="courseName">Course Name</Label>
-                    <Input
-                      id="courseName"
-                      value={courseName}
-                      onChange={(e) => setCourseName(e.target.value)}
-                      placeholder="Introduction to Thermodynamics"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="domain">Domain</Label>
-                    <Select value={domain} onValueChange={setDomain}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a domain" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {domains.map(d => (
-                          <SelectItem key={d.id} value={d.id}>{d.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="semester">Semester (optional)</Label>
-                      <Input
-                        id="semester"
-                        value={semester}
-                        onChange={(e) => setSemester(e.target.value)}
-                        placeholder="Fall 2024"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="professor">Professor (optional)</Label>
-                      <Input
-                        id="professor"
-                        value={professor}
-                        onChange={(e) => setProfessor(e.target.value)}
-                        placeholder="Dr. Smith"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                  <div className="flex gap-4">
-                    <Button variant="outline" onClick={handleReset} className="flex-1">
-                      Cancel
-                    </Button>
-                      <Button 
-                        onClick={handleStartProcessing}
-                        disabled={!courseName.trim() || authLoading}
-                        className="flex-1 bg-sage hover:bg-sage/90 text-sage-foreground"
-                      >
-                        {authLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          "Start Processing"
-                        )}
+            <AnimatePresence mode="wait">
+              {uploadState === "idle" && (
+                <motion.div
+                  key="dropzone"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className={`border-2 border-dashed rounded-xl p-16 text-center transition-all duration-200 cursor-pointer shadow-sm ${
+                    isDragging 
+                      ? "border-sage bg-sage/10" 
+                      : "border-border/40 hover:border-sage/50"
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => document.getElementById("file-input")?.click()}
+                >
+                  <input
+                    id="file-input"
+                    type="file"
+                    accept=".pdf,.txt,.doc,.docx,.md"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <Upload className={`w-16 h-16 mx-auto mb-4 ${isDragging ? "text-sage" : "text-muted-foreground"}`} />
+                  <p className="text-lg font-medium mb-2">
+                    Drag file here or click to browse
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Supports PDF, TXT, DOCX, and Markdown up to 100MB
+                  </p>
+                </motion.div>
+              )}
+  
+              {uploadState === "selected" && (
+                <motion.div
+                  key="selected"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-6"
+                >
+                  <div className="bg-elevated rounded-xl border border-border/40 p-6 shadow-sm">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-sage/10 rounded-lg flex items-center justify-center">
+                        <FileText className="w-6 h-6 text-sage" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{file?.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {file && formatFileSize(file.size)}
+                        </p>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={handleReset}>
+                        <X className="w-4 h-4" />
                       </Button>
+                    </div>
                   </div>
-
-              </motion.div>
-            )}
-
-            {uploadState === "processing" && (
-              <motion.div
-                key="processing"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="bg-elevated rounded-xl border border-border p-12 text-center"
-              >
-                <Loader2 className="w-12 h-12 text-sage mx-auto mb-6 animate-spin" />
-                <div className="w-full max-w-md mx-auto mb-4">
-                  <div className="h-2 bg-surface rounded-full overflow-hidden">
-                    <motion.div 
-                      className="h-full bg-sage"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${progress}%` }}
-                      transition={{ duration: 0.3 }}
-                    />
+  
+                  <div className="bg-elevated rounded-xl border border-border/40 p-6 space-y-4 shadow-sm">
+                    <div className="space-y-2">
+                      <Label htmlFor="courseName">Course Name</Label>
+                      <Input
+                        id="courseName"
+                        value={courseName}
+                        onChange={(e) => setCourseName(e.target.value)}
+                        placeholder="Introduction to Thermodynamics"
+                      />
+                    </div>
+  
+                    <div className="space-y-2">
+                      <Label htmlFor="domain">Domain</Label>
+                      <Select value={domain} onValueChange={setDomain}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a domain" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {domains.map(d => (
+                            <SelectItem key={d.id} value={d.id}>{d.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+  
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="semester">Semester (optional)</Label>
+                        <Input
+                          id="semester"
+                          value={semester}
+                          onChange={(e) => setSemester(e.target.value)}
+                          placeholder="Fall 2024"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="professor">Professor (optional)</Label>
+                        <Input
+                          id="professor"
+                          value={professor}
+                          onChange={(e) => setProfessor(e.target.value)}
+                          placeholder="Dr. Smith"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <p className="text-lg font-medium mb-1">{progress}%</p>
-                <p className="text-muted-foreground">{statusText}</p>
-                <Button variant="outline" onClick={handleReset} className="mt-6">
-                  Cancel
-                </Button>
-              </motion.div>
-            )}
-
-            {uploadState === "complete" && (
-              <motion.div
-                key="complete"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                className="bg-elevated rounded-xl border border-border p-12 text-center"
-              >
-                <div className="w-16 h-16 bg-sage/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <CheckCircle className="w-8 h-8 text-sage" />
-                </div>
-                <h2 className="text-2xl font-bold mb-2">Processing Complete!</h2>
-                <p className="text-muted-foreground mb-6">
-                  Redirecting to your course...
-                </p>
-                <Loader2 className="w-6 h-6 text-sage mx-auto animate-spin" />
-              </motion.div>
-            )}
-
-            {uploadState === "error" && (
-              <motion.div
-                key="error"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                className="bg-elevated rounded-xl border border-border p-12 text-center"
-              >
-                <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <AlertCircle className="w-8 h-8 text-destructive" />
-                </div>
-                <h2 className="text-2xl font-bold mb-2">Something went wrong</h2>
-                <p className="text-muted-foreground mb-6">
-                  We couldn&apos;t process your file. Please try again.
-                </p>
-                <div className="flex gap-4 justify-center">
-                  <Button variant="outline" onClick={handleReset}>
-                    Try Again
+  
+                    <div className="flex gap-4">
+                      <Button variant="outline" onClick={handleReset} className="flex-1">
+                        Cancel
+                      </Button>
+                        <Button 
+                          onClick={handleStartProcessing}
+                          disabled={!courseName.trim() || authLoading}
+                          className="flex-1 bg-sage hover:bg-sage/90 text-sage-foreground shadow-sm"
+                        >
+                          {authLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            "Start Processing"
+                          )}
+                        </Button>
+                    </div>
+  
+                </motion.div>
+              )}
+  
+              {uploadState === "processing" && (
+                <motion.div
+                  key="processing"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="bg-elevated rounded-xl border border-border/40 p-12 text-center shadow-sm"
+                >
+                  <Loader2 className="w-12 h-12 text-sage mx-auto mb-6 animate-spin" />
+                  <div className="w-full max-w-md mx-auto mb-4">
+                    <div className="h-2 bg-surface rounded-full overflow-hidden">
+                      <motion.div 
+                        className="h-full bg-sage"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-lg font-medium mb-1">{progress}%</p>
+                  <p className="text-muted-foreground">{statusText}</p>
+                  <Button variant="outline" onClick={handleReset} className="mt-6">
+                    Cancel
                   </Button>
-                  <Button 
-                    onClick={() => document.getElementById("file-input")?.click()}
-                    className="bg-sage hover:bg-sage/90 text-sage-foreground"
-                  >
-                    Choose Different File
-                  </Button>
-                </div>
-              </motion.div>
-            )}
+                </motion.div>
+              )}
+  
+              {uploadState === "complete" && (
+                <motion.div
+                  key="complete"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="bg-elevated rounded-xl border border-border/40 p-12 text-center shadow-sm"
+                >
+                  <div className="w-16 h-16 bg-sage/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle className="w-8 h-8 text-sage" />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-2">Processing Complete!</h2>
+                  <p className="text-muted-foreground mb-6">
+                    Redirecting to your course...
+                  </p>
+                  <Loader2 className="w-6 h-6 text-sage mx-auto animate-spin" />
+                </motion.div>
+              )}
+  
+              {uploadState === "error" && (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="bg-elevated rounded-xl border border-border/40 p-12 text-center shadow-sm"
+                >
+                  <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <AlertCircle className="w-8 h-8 text-destructive" />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-2">Something went wrong</h2>
+                  <p className="text-muted-foreground mb-6">
+                    We couldn&apos;t process your file. Please try again.
+                  </p>
+                  <div className="flex gap-4 justify-center">
+                    <Button variant="outline" onClick={handleReset}>
+                      Try Again
+                    </Button>
+                    <Button 
+                      onClick={() => document.getElementById("file-input")?.click()}
+                      className="bg-sage hover:bg-sage/90 text-sage-foreground shadow-sm"
+                    >
+                      Choose Different File
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
           </AnimatePresence>
         </motion.div>
       </div>
