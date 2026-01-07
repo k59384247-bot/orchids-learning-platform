@@ -31,6 +31,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { supabase, Chunk, Course } from "@/lib/supabase"
+import type { ImperativePanelHandle } from "react-resizable-panels"
 
 type SelectionToolbarPosition = {
   top: number
@@ -526,6 +527,30 @@ export default function CourseWorkspacePage() {
   
   const chunkRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const leftPanelRef = useRef<ImperativePanelHandle>(null)
+  const rightPanelRef = useRef<ImperativePanelHandle>(null)
+
+  useEffect(() => {
+    const panel = leftPanelRef.current
+    if (panel) {
+      if (leftPanelOpen) {
+        panel.expand()
+      } else {
+        panel.collapse()
+      }
+    }
+  }, [leftPanelOpen])
+
+  useEffect(() => {
+    const panel = rightPanelRef.current
+    if (panel) {
+      if (visualPanelOpen) {
+        panel.expand()
+      } else {
+        panel.collapse()
+      }
+    }
+  }, [visualPanelOpen])
 
   const fetchCourseData = useCallback(async () => {
     if (courseId.startsWith("mock-")) {
@@ -837,10 +862,13 @@ export default function CourseWorkspacePage() {
 
           <ResizablePanelGroup direction="horizontal" className="flex-1">
             <ResizablePanel
+              ref={leftPanelRef}
               defaultSize={leftPanelOpen ? 20 : 0}
               minSize={leftPanelOpen ? 5 : 0}
               maxSize={30}
               collapsible={true}
+              onCollapse={() => setLeftPanelOpen(false)}
+              onExpand={() => setLeftPanelOpen(true)}
               onResize={(size) => {
                 if (leftPanelOpen) {
                   setIsLeftPanelCollapsed(size < 12)
@@ -943,10 +971,13 @@ export default function CourseWorkspacePage() {
                <ResizableHandle className={`hidden lg:flex transition-opacity duration-140 ${!visualPanelOpen && "opacity-0 pointer-events-none"}`} />
    
              <ResizablePanel
+               ref={rightPanelRef}
                defaultSize={visualPanelOpen ? 30 : 0}
                minSize={visualPanelOpen ? 5 : 0}
                maxSize={50}
                collapsible={true}
+               onCollapse={() => setVisualPanelOpen(false)}
+               onExpand={() => setVisualPanelOpen(true)}
                onResize={(size) => {
                  if (visualPanelOpen) {
                    setIsRightPanelCollapsed(size < 12)
