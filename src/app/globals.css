@@ -64,7 +64,7 @@
   --secondary: #eee8d5;
   --secondary-foreground: #1F2933;
   --muted: #eee8d5;
-  --muted-foreground: #9CA3AF;
+  --muted-foreground: #3f3f46;
   --accent: #eee8d5;
   --accent-foreground: #1F2933;
   --destructive: #dc2626;
@@ -105,7 +105,7 @@
   --secondary: #151B18;
   --secondary-foreground: #E6ECE9;
   --muted: #151B18;
-  --muted-foreground: #8A948E;
+  --muted-foreground: #a1a1aa;
   --accent: #151B18;
   --accent-foreground: #E6ECE9;
   --destructive: #ef4444;
@@ -138,7 +138,21 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    background-image: 
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-attachment: fixed;
   }
+}
+
+.paper-texture {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
 nextjs-portal {
@@ -191,3 +205,36 @@ nextjs-portal {
 .bounce-dot:nth-child(1) { animation-delay: 0ms; }
 .bounce-dot:nth-child(2) { animation-delay: 160ms; }
 .bounce-dot:nth-child(3) { animation-delay: 320ms; }
+
+/* Custom subtle scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--elevated);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--border-subtle);
+}
+
+/* For hiding scrollbars while allowing scroll */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

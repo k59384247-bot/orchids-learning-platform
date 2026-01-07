@@ -18,6 +18,11 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -180,12 +185,13 @@ function EmptyState() {
   )
 }
 
-export default function DashboardPage() {
-  const [courses, setCourses] = useState<Course[]>([])
-  const [loading, setLoading] = useState(true)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const { user, signOut, profile, isMock } = useAuth()
-  const router = useRouter()
+  export default function DashboardPage() {
+    const [courses, setCourses] = useState<Course[]>([])
+    const [loading, setLoading] = useState(true)
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+    const { user, signOut, profile, isMock, loading: authLoading } = useAuth()
+    const router = useRouter()
+
 
   const fetchCourses = useCallback(async () => {
     if (!user) return
@@ -239,8 +245,10 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user) {
       fetchCourses()
+    } else if (!authLoading) {
+      setLoading(false)
     }
-  }, [user, fetchCourses])
+  }, [user, authLoading, fetchCourses])
 
   const handleDeleteCourse = async (courseId: string) => {
     const { error } = await supabase
@@ -262,99 +270,109 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <aside 
-        className={`bg-surface border-r border-border flex flex-col transition-all duration-300 ${
-          sidebarCollapsed ? "w-16" : "w-60"
-        }`}
-      >
-        <div className="p-4 border-b border-border flex items-center justify-between">
-          {!sidebarCollapsed && (
-            <Link href="/dashboard" className="text-xl font-semibold text-foreground">
-              Cognify
-            </Link>
-          )}
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="h-8 w-8"
-          >
-            {sidebarCollapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-          </Button>
-        </div>
-        
-        <nav className="flex-1 p-2">
-          <Link href="/dashboard">
-            <Button 
-              variant="ghost" 
-              className={`w-full justify-start gap-3 mb-1 ${sidebarCollapsed ? "px-2" : ""}`}
-            >
-              <BookOpen className="w-5 h-5" />
-              {!sidebarCollapsed && "Dashboard"}
-            </Button>
-          </Link>
-          <Link href="/settings">
-            <Button 
-              variant="ghost" 
-              className={`w-full justify-start gap-3 ${sidebarCollapsed ? "px-2" : ""}`}
-            >
-              <Settings className="w-5 h-5" />
-              {!sidebarCollapsed && "Settings"}
-            </Button>
-          </Link>
-        </nav>
-
-        <div className="p-2 border-t border-border">
-          <Button 
-            variant="ghost" 
-            className={`w-full justify-start gap-3 text-muted-foreground hover:text-foreground ${sidebarCollapsed ? "px-2" : ""}`}
-            onClick={handleSignOut}
-          >
-            <LogOut className="w-5 h-5" />
-            {!sidebarCollapsed && "Sign Out"}
-          </Button>
-        </div>
-      </aside>
-
-      <main className="flex-1 p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Your Courses</h1>
-              {profile?.full_name && (
-                <p className="text-muted-foreground mt-1">Welcome back, {profile.full_name.split(" ")[0]}</p>
+    <div className="h-screen bg-background overflow-hidden">
+      <ResizablePanelGroup direction="horizontal">
+        <ResizablePanel 
+          defaultSize={20} 
+          minSize={15} 
+          maxSize={30}
+          className={`bg-surface border-r border-border flex flex-col transition-all duration-300 ${
+            sidebarCollapsed ? "min-w-[64px] max-w-[64px]" : ""
+          }`}
+        >
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              {!sidebarCollapsed && (
+                <Link href="/" className="text-xl font-semibold text-foreground">
+                  Cognify
+                </Link>
               )}
-            </div>
-            <Link href="/upload">
-              <Button className="bg-sage hover:bg-sage/90 text-sage-foreground gap-2">
-                <Plus className="w-4 h-4" />
-                Create Course
+
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="h-8 w-8"
+            >
+              {sidebarCollapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+            </Button>
+          </div>
+          
+          <nav className="flex-1 p-2">
+            <Link href="/dashboard">
+              <Button 
+                variant="ghost" 
+                className={`w-full justify-start gap-3 mb-1 ${sidebarCollapsed ? "px-2" : ""}`}
+              >
+                <BookOpen className="w-5 h-5" />
+                {!sidebarCollapsed && "Dashboard"}
               </Button>
             </Link>
+            <Link href="/settings">
+              <Button 
+                variant="ghost" 
+                className={`w-full justify-start gap-3 ${sidebarCollapsed ? "px-2" : ""}`}
+              >
+                <Settings className="w-5 h-5" />
+                {!sidebarCollapsed && "Settings"}
+              </Button>
+            </Link>
+          </nav>
+  
+          <div className="p-2 border-t border-border">
+            <Button 
+              variant="ghost" 
+              className={`w-full justify-start gap-3 text-muted-foreground hover:text-foreground ${sidebarCollapsed ? "px-2" : ""}`}
+              onClick={handleSignOut}
+            >
+              <LogOut className="w-5 h-5" />
+              {!sidebarCollapsed && "Sign Out"}
+            </Button>
           </div>
+        </ResizablePanel>
 
-          {loading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="bg-elevated rounded-xl border border-border p-6 h-48 skeleton-shimmer" />
-              ))}
+        <ResizableHandle withHandle />
+
+        <ResizablePanel defaultSize={80}>
+          <main className="h-full overflow-y-auto p-8">
+            <div className="max-w-6xl mx-auto">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h1 className="text-3xl font-bold text-foreground">Your Courses</h1>
+                  {profile?.full_name && (
+                    <p className="text-muted-foreground mt-1">Welcome back, {profile.full_name.split(" ")[0]}</p>
+                  )}
+                </div>
+                <Link href="/upload">
+                  <Button className="bg-sage hover:bg-sage/90 text-sage-foreground gap-2">
+                    <Plus className="w-4 h-4" />
+                    Create Course
+                  </Button>
+                </Link>
+              </div>
+  
+              {loading ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="bg-elevated rounded-xl border border-border p-6 h-48 skeleton-shimmer" />
+                  ))}
+                </div>
+              ) : courses.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {courses.map(course => (
+                    <CourseCard 
+                      key={course.id} 
+                      course={course} 
+                      onDelete={handleDeleteCourse}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          ) : courses.length === 0 ? (
-            <EmptyState />
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {courses.map(course => (
-                <CourseCard 
-                  key={course.id} 
-                  course={course} 
-                  onDelete={handleDeleteCourse}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
+          </main>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   )
 }

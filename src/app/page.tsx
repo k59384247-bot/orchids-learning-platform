@@ -10,12 +10,15 @@ import {
   Sparkles, 
   ArrowRight, 
   Play,
-  ChevronRight
+  MessageSquare
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const universities = [
-  "MIT", "Stanford", "Harvard", "Oxford", "Cambridge"
+  { name: "MIT", logo: "/logos/mit.svg" },
+  { name: "Stanford", logo: "/logos/stanford.svg" },
+  { name: "Harvard", logo: "/logos/harvard.svg" },
+  { name: "Oxford", logo: "/logos/oxford.svg" }
 ]
 
 function AnimatedDiagram() {
@@ -70,313 +73,195 @@ function AnimatedDiagram() {
         fill="url(#sage-gradient)"
         animate={{ opacity: active >= 2 ? 1 : 0.3 }}
       />
-      
-      <motion.text x="40" y="110" textAnchor="middle" className="text-[8px] fill-muted-foreground">Input</motion.text>
-      <motion.text x="110" y="110" textAnchor="middle" className="text-[8px] fill-muted-foreground">Process</motion.text>
-      <motion.text x="170" y="110" textAnchor="middle" className="text-[8px] fill-muted-foreground">Visual</motion.text>
     </svg>
   )
 }
 
-function BeforeAfterCard() {
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      viewport={{ once: true }}
-      className="w-full max-w-[1200px] mx-auto bg-elevated rounded-xl border border-border overflow-hidden shadow-sm"
-    >
-      <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-        <div className="p-8">
-          <div className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-destructive/10 text-destructive flex items-center justify-center text-xs">B</span>
-            Before
-          </div>
-          <div className="text-sm leading-tight text-muted-foreground/70 font-mono" style={{ lineHeight: "1.3" }}>
-            The second law of thermodynamics states that the total entropy of an isolated system can never decrease over time, and is constant if and only if all processes are reversible. Isolated systems spontaneously evolve towards thermodynamic equilibrium, the state with maximum entropy. The entropy change dS of a system undergoing a reversible process is dS = δQ/T, where δQ is the heat absorbed and T is the absolute temperature.
-          </div>
-        </div>
-        
-        <div className="p-8 bg-surface/50">
-          <div className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-sage/10 text-sage flex items-center justify-center text-xs">A</span>
-            After
-          </div>
-          <div className="space-y-4">
-            <div className="text-base leading-relaxed text-foreground">
-              Think of entropy like a messy room - it naturally gets messier over time, never cleaner by itself. That&apos;s the second law: disorder always increases in closed systems.
-            </div>
-            <div className="w-full h-24 bg-surface rounded-lg flex items-center justify-center">
-              <AnimatedDiagram />
-            </div>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-const howItWorks = [
-  {
-    icon: Upload,
-    title: "Upload PDF",
-    description: "Drop your course materials, textbooks, or lecture notes",
-    step: "01"
-  },
-  {
-    icon: FileText,
-    title: "Get Simplified Text",
-    description: "AI transforms dense content into clear explanations",
-    step: "02"
-  },
-  {
-    icon: LineChart,
-    title: "Explore Visualizations",
-    description: "Interactive 2D diagrams bring concepts to life",
-    step: "03"
-  }
-]
-
-const features = [
-  {
-    title: "Text Simplification",
-    description: "Toggle between ELI5 and technical explanations",
-    preview: (
-      <div className="bg-surface rounded-lg p-4 space-y-2">
-        <div className="flex gap-2">
-          <div className="px-3 py-1.5 bg-sage/10 text-sage rounded-full text-xs font-medium">Simple</div>
-          <div className="px-3 py-1.5 bg-muted text-muted-foreground rounded-full text-xs">Technical</div>
-        </div>
-        <div className="h-16 bg-elevated rounded animate-pulse" />
-      </div>
-    )
-  },
-  {
-    title: "2D Visualizations",
-    description: "Animated diagrams that explain complex processes",
-    preview: (
-      <div className="bg-surface rounded-lg p-4 h-28 flex items-center justify-center">
-        <AnimatedDiagram />
-      </div>
-    )
-  },
-  {
-    title: "AI Chat Assistant",
-    description: "Ask questions about any part of your material",
-    preview: (
-      <div className="bg-surface rounded-lg p-4 space-y-2">
-        <div className="flex gap-2 items-start">
-          <div className="w-6 h-6 rounded-full bg-sage/20 shrink-0" />
-          <div className="bg-elevated rounded-lg p-2 text-xs text-muted-foreground">Explain entropy simply</div>
-        </div>
-        <div className="flex gap-2 items-start justify-end">
-          <div className="bg-sage/10 rounded-lg p-2 text-xs text-foreground">Think of it like a messy room...</div>
-          <div className="w-6 h-6 rounded-full bg-sage shrink-0" />
-        </div>
-      </div>
-    )
-  }
-]
-
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="text-xl font-semibold text-foreground">
-            Cognify
+      {/* NAVIGATION */}
+      <nav className="fixed top-0 left-0 right-0 z-50 h-16 bg-background/80 backdrop-blur-md border-b border-foreground/10 px-[48px] flex items-center justify-between">
+        <div className="w-[120px]">
+          <Link href="/" className="text-xl font-bold tracking-tight">Cognify</Link>
+        </div>
+        <div className="hidden md:flex items-center gap-[24px]">
+          <Link href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Features</Link>
+          <Link href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</Link>
+        </div>
+        <div className="w-[120px] flex justify-end">
+          <Link href="/login">
+            <Button variant="outline" size="sm">Sign In</Button>
           </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/login">
-              <Button variant="ghost" size="sm">Sign In</Button>
-            </Link>
-            <Link href="/signup">
-              <Button size="sm" className="bg-sage hover:bg-sage/90 text-sage-foreground">
-                Get Started
-              </Button>
-            </Link>
-          </div>
         </div>
       </nav>
 
-      <main className="pt-16">
-        <section className="py-24 px-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="max-w-2xl">
-              <motion.h1 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="text-5xl font-bold text-foreground leading-tight mb-6"
-              >
-                Understand,<br />Don&apos;t Memorize
-              </motion.h1>
-              
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-xl text-muted-foreground mb-4"
-              >
-                For university students tackling complex coursework
-              </motion.p>
-              
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="text-base text-muted-foreground/80 mb-8 leading-relaxed"
-              >
-                Upload your dense PDF course materials and watch them transform into deeply simplified explanations with interactive 2D visualizations. Finally understand the concepts, not just memorize the formulas.
-              </motion.p>
-              
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="flex flex-wrap gap-4 mb-8"
-              >
-                <Link href="/signup">
-                  <Button size="lg" className="bg-sage hover:bg-sage/90 text-sage-foreground gap-2">
-                    Try with Your First PDF
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-                <Button size="lg" variant="outline" className="gap-2">
-                  <Play className="w-4 h-4" />
-                  See How It Works
-                </Button>
-              </motion.div>
-              
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="flex items-center gap-2 text-sm text-muted-foreground"
-              >
-                <span>Used by students at</span>
-                <div className="flex gap-4">
-                  {universities.map((uni) => (
-                    <span key={uni} className="font-medium text-foreground/60">{uni}</span>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        <section className="py-16 px-6">
-          <BeforeAfterCard />
-        </section>
-
-        <section className="py-24 px-6 bg-surface/50">
-          <div className="max-w-7xl mx-auto">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-              className="text-3xl font-bold text-center mb-16"
-            >
-              How It Works
-            </motion.h2>
-            
-            <div className="grid md:grid-cols-3 gap-8">
-              {howItWorks.map((item, index) => (
-                <motion.div
-                  key={item.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                  className="relative"
-                >
-                  <div className="absolute -top-4 -left-4 text-6xl font-bold text-sage/10">{item.step}</div>
-                  <div className="bg-elevated rounded-xl p-8 border border-border hover:shadow-lg transition-shadow duration-300 relative z-10">
-                    <div className="w-12 h-12 bg-sage/10 rounded-lg flex items-center justify-center mb-4">
-                      <item.icon className="w-6 h-6 text-sage" />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
-                    <p className="text-muted-foreground text-sm">{item.description}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="py-24 px-6">
-          <div className="max-w-7xl mx-auto">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-              className="text-3xl font-bold text-center mb-16"
-            >
-              Core Features
-            </motion.h2>
-            
-            <div className="grid md:grid-cols-3 gap-8">
-              {features.map((feature, index) => (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                  whileHover={{ y: -4 }}
-                  className="bg-elevated rounded-xl border border-border overflow-hidden h-[400px] flex flex-col hover:shadow-lg transition-all duration-300"
-                >
-                  <div className="p-6 flex-1">
-                    <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-                    <p className="text-muted-foreground text-sm mb-4">{feature.description}</p>
-                    {feature.preview}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="py-24 px-6 bg-surface/50">
-          <div className="max-w-2xl mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-            >
-              <Sparkles className="w-12 h-12 text-sage mx-auto mb-6" />
-              <h2 className="text-3xl font-bold mb-4">Start Learning with Clarity</h2>
-              <p className="text-muted-foreground mb-8">
-                Join thousands of students who finally understand their coursework.
-              </p>
+      {/* HERO SECTION */}
+      <section className="min-h-screen flex items-center pt-16">
+        <div className="max-w-[1200px] mx-auto px-[48px] w-full grid md:grid-cols-2 gap-[48px] items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="text-[14px] font-bold tracking-wider text-sage uppercase">FOR UNIVERSITY STUDENTS</span>
+            <h1 className="text-[48px] font-semibold leading-tight tracking-[-0.03em] mt-4">
+              Understand,<br />Don&apos;t Memorize
+            </h1>
+            <p className="text-lg text-muted-foreground mt-[24px] max-w-[480px]">
+              Upload your dense PDF course materials and watch them transform into deeply simplified explanations with interactive 2D visualizations.
+            </p>
+            <div className="flex items-center gap-4 mt-[32px]">
               <Link href="/signup">
-                <Button size="lg" className="bg-sage hover:bg-sage/90 text-sage-foreground gap-2">
-                  Try with Your First PDF
-                  <ChevronRight className="w-4 h-4" />
+                <Button size="lg" className="bg-sage hover:bg-sage/90 text-sage-foreground px-8">
+                  Get Started
                 </Button>
               </Link>
-              <p className="text-sm text-muted-foreground mt-4">
-                Free during beta. No credit card required.
-              </p>
-            </motion.div>
-          </div>
-        </section>
-      </main>
+              <button className="flex items-center gap-2 text-[16px] font-medium text-sage hover:underline ml-4">
+                Watch Demo <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="mt-[48px]">
+              <p className="text-[12px] font-medium text-muted-foreground uppercase tracking-wider mb-4">Used by students at</p>
+              <div className="flex items-center gap-[16px]">
+                {["MIT", "Stanford", "Harvard", "Oxford"].map((uni) => (
+                  <div key={uni} className="w-[80px] h-8 bg-muted/50 rounded flex items-center justify-center text-[10px] font-bold text-muted-foreground grayscale opacity-80">
+                    {uni}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="w-full aspect-[3/2] bg-elevated rounded-[16px] border border-foreground/10 flex items-center justify-center relative overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-sage/5 to-transparent" />
+            <span className="text-muted-foreground font-medium z-10">[Product Demo Visual]</span>
+          </motion.div>
+        </div>
+      </section>
 
-      <footer className="border-t border-border py-8 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-sm text-muted-foreground">
-            Cognify - Understand, Don&apos;t Memorize
+      {/* BEFORE/AFTER SECTION */}
+      <section className="py-[96px] px-[48px]">
+        <div className="max-w-[1000px] mx-auto text-center">
+          <h2 className="text-[32px] font-bold mb-[48px]">From Dense to Deeply Simple</h2>
+          <div className="bg-elevated rounded-[16px] border border-foreground/10 p-[40px] flex flex-col md:flex-row gap-[32px] items-center text-left relative">
+            <div className="flex-1 w-full">
+              <span className="text-[14px] font-bold text-muted-foreground mb-[12px] block">Before</span>
+              <div className="bg-surface border border-border p-[20px] rounded-[8px] h-[300px] overflow-hidden">
+                <p className="text-[12px] leading-[1.3] text-muted-foreground">
+                  The second law of thermodynamics states that the total entropy of an isolated system can never decrease over time, and is constant if and only if all processes are reversible. Isolated systems spontaneously evolve towards thermodynamic equilibrium, the state with maximum entropy. This implies that natural processes are irreversible and tend towards a state of maximum disorder. The mathematical formulation dS ≥ δQ/T defines the entropy change in relation to heat transfer and absolute temperature. In a closed system, any energy transformation results in some energy being converted into a non-usable form, typically low-grade heat, which increases the overall entropy of the universe. This principle is fundamental to our understanding of the arrow of time and the ultimate fate of cosmic structures...
+                </p>
+                <div className="h-20 bg-gradient-to-t from-surface to-transparent absolute bottom-[60px] left-[60px] right-[540px]" />
+              </div>
+            </div>
+            
+            <div className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-sage/10 text-sage">
+              <ArrowRight className="w-5 h-5" />
+            </div>
+
+            <div className="flex-1 w-full">
+              <span className="text-[14px] font-bold text-sage mb-[12px] block">After</span>
+              <div className="bg-surface border border-sage/20 p-[20px] rounded-[8px] h-[300px] flex flex-col justify-between">
+                <p className="text-[16px] leading-[1.6] text-foreground">
+                  Think of entropy like a messy room - it naturally gets messier over time, never cleaner by itself. Disorder always increases in closed systems.
+                </p>
+                <div className="w-full aspect-video bg-sage/5 rounded-[8px] flex items-center justify-center border border-sage/10">
+                  <div className="w-32 h-20">
+                    <AnimatedDiagram />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-6 text-sm text-muted-foreground">
-            <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
-            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS SECTION */}
+      <section id="how-it-works" className="py-[96px] bg-surface">
+        <div className="max-w-[1200px] mx-auto px-[48px]">
+          <h2 className="text-[32px] font-bold text-center mb-[64px]">How It Works</h2>
+          <div className="grid md:grid-cols-3 gap-[32px]">
+            {[
+              { title: "Upload PDF", desc: "Drop your course materials or lecture notes", icon: Upload, step: "1" },
+              { title: "Get Simplified Text", desc: "AI transforms dense content into clear explanations", icon: FileText, step: "2" },
+              { title: "Explore Visualizations", desc: "Interactive 2D diagrams bring concepts to life", icon: LineChart, step: "3" }
+            ].map((item) => (
+              <div key={item.step} className="bg-elevated p-[32px] rounded-[16px] border border-foreground/10 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
+                <div className="w-[48px] h-[48px] rounded-full bg-sage/15 flex items-center justify-center text-[20px] font-bold text-sage mb-6">
+                  {item.step}
+                </div>
+                <item.icon className="w-[32px] h-[32px] text-sage" />
+                <h3 className="text-[18px] font-semibold mt-[24px] mb-[12px]">{item.title}</h3>
+                <p className="text-sm text-muted-foreground">{item.desc}</p>
+                <div className="w-full aspect-[2/1] bg-muted/30 rounded-[8px] mt-[24px]" />
+              </div>
+            ))}
           </div>
+        </div>
+      </section>
+
+      {/* FEATURES SECTION */}
+      <section id="features" className="py-[96px]">
+        <div className="max-w-[1200px] mx-auto px-[48px]">
+          <h2 className="text-[32px] font-bold text-center mb-[64px]">Core Features</h2>
+          <div className="grid md:grid-cols-3 gap-[32px]">
+            {[
+              { title: "Text Simplification", desc: "Toggle between technical and 'Explain Like I'm 5' modes for any concept.", icon: Sparkles },
+              { title: "2D Visualizations", desc: "Complex processes are automatically mapped to animated, interactive diagrams.", icon: LineChart },
+              { title: "AI Chat Assistant", desc: "Ask specific questions about your material and get context-aware answers.", icon: MessageSquare }
+            ].map((feature) => (
+              <div key={feature.title} className="bg-elevated p-[40px] rounded-[16px] border border-foreground/10 min-h-[400px] flex flex-col">
+                <feature.icon className="w-[40px] h-[40px] text-sage" />
+                <h3 className="text-[20px] font-semibold mt-[20px] mb-[16px]">{feature.title}</h3>
+                <p className="text-muted-foreground">{feature.desc}</p>
+                <div className="mt-auto w-full h-[200px] bg-muted/20 border border-foreground/5 rounded-[8px] flex items-center justify-center">
+                  <span className="text-[12px] text-muted-foreground">[Screenshot Preview]</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FINAL CTA SECTION */}
+      <section className="py-[96px] bg-surface">
+        <div className="max-w-[600px] mx-auto px-[48px] text-center">
+          <h2 className="text-[32px] font-bold">Start Learning with Clarity</h2>
+          <p className="text-muted-foreground mt-[24px]">
+            Join students from top universities who finally understand their course material, not just memorize it.
+          </p>
+          <Link href="/signup">
+            <Button size="lg" className="bg-sage hover:bg-sage/90 text-sage-foreground mt-[32px] px-10">
+              Try With Your First PDF
+            </Button>
+          </Link>
+          <p className="text-[12px] text-muted-foreground mt-[12px]">
+            Free during beta. No credit card.
+          </p>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="py-[48px] px-[48px] border-t border-foreground/10">
+        <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="w-[100px]">
+            <span className="font-bold">Cognify</span>
+          </div>
+          <div className="flex gap-[24px]">
+            <Link href="#" className="text-[14px] text-muted-foreground hover:text-sage transition-colors">About</Link>
+            <Link href="#" className="text-[14px] text-muted-foreground hover:text-sage transition-colors">Privacy</Link>
+            <Link href="#" className="text-[14px] text-muted-foreground hover:text-sage transition-colors">Contact</Link>
+          </div>
+          <div className="text-[14px] text-muted-foreground">
+            support@cognify.edu
+          </div>
+        </div>
+        <div className="text-center mt-[24px] text-[12px] text-muted-foreground">
+          © 2026 Cognify. All rights reserved.
         </div>
       </footer>
     </div>

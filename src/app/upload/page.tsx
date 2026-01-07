@@ -41,18 +41,19 @@ const domains = [
 
 type UploadState = "idle" | "selected" | "processing" | "error" | "complete"
 
-export default function UploadPage() {
-  const [file, setFile] = useState<File | null>(null)
-  const [courseName, setCourseName] = useState("")
-  const [domain, setDomain] = useState("")
-  const [semester, setSemester] = useState("")
-  const [professor, setProfessor] = useState("")
-  const [uploadState, setUploadState] = useState<UploadState>("idle")
-  const [progress, setProgress] = useState(0)
-  const [statusText, setStatusText] = useState("")
-  const [isDragging, setIsDragging] = useState(false)
-  const { user, isMock } = useAuth()
-  const router = useRouter()
+  export default function UploadPage() {
+    const [file, setFile] = useState<File | null>(null)
+    const [courseName, setCourseName] = useState("")
+    const [domain, setDomain] = useState("")
+    const [semester, setSemester] = useState("")
+    const [professor, setProfessor] = useState("")
+    const [uploadState, setUploadState] = useState<UploadState>("idle")
+    const [progress, setProgress] = useState(0)
+    const [statusText, setStatusText] = useState("")
+    const [isDragging, setIsDragging] = useState(false)
+    const { user, isMock, loading: authLoading } = useAuth()
+    const router = useRouter()
+
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -69,49 +70,78 @@ export default function UploadPage() {
     setIsDragging(false)
     
     const droppedFile = e.dataTransfer.files[0]
-    if (droppedFile && droppedFile.type === "application/pdf") {
-      setFile(droppedFile)
-      setCourseName(droppedFile.name.replace(".pdf", ""))
-      setUploadState("selected")
-    } else {
-      toast.error("Please upload a PDF file")
+    if (droppedFile) {
+      const allowedTypes = [
+        "application/pdf", 
+        "text/plain", 
+        "text/markdown", 
+        "application/msword", 
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ]
+      const allowedExtensions = [".pdf", ".txt", ".doc", ".docx", ".md"]
+      const fileExtension = droppedFile.name.toLowerCase().substring(droppedFile.name.lastIndexOf("."))
+
+      if (allowedTypes.includes(droppedFile.type) || allowedExtensions.includes(fileExtension)) {
+        setFile(droppedFile)
+        setCourseName(droppedFile.name.replace(/\.[^/.]+$/, ""))
+        setUploadState("selected")
+      } else {
+        toast.error("Please upload a supported text file (PDF, TXT, DOCX, MD)")
+      }
     }
   }, [])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
-    if (selectedFile && selectedFile.type === "application/pdf") {
-      setFile(selectedFile)
-      setCourseName(selectedFile.name.replace(".pdf", ""))
-      setUploadState("selected")
-    } else {
-      toast.error("Please upload a PDF file")
+    if (selectedFile) {
+      const allowedTypes = [
+        "application/pdf", 
+        "text/plain", 
+        "text/markdown", 
+        "application/msword", 
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ]
+      const allowedExtensions = [".pdf", ".txt", ".doc", ".docx", ".md"]
+      const fileExtension = selectedFile.name.toLowerCase().substring(selectedFile.name.lastIndexOf("."))
+
+      if (allowedTypes.includes(selectedFile.type) || allowedExtensions.includes(fileExtension)) {
+        setFile(selectedFile)
+        setCourseName(selectedFile.name.replace(/\.[^/.]+$/, ""))
+        setUploadState("selected")
+      } else {
+        toast.error("Please upload a supported text file (PDF, TXT, DOCX, MD)")
+      }
     }
   }
 
-  const handleStartProcessing = async () => {
-    if (!file || !user) return
-    
-    setUploadState("processing")
-    setProgress(0)
-    setStatusText("Uploading file...")
+    const handleStartProcessing = async () => {
+      console.log("Start processing clicked", { file, user, isMock })
+      
+      if (!file) {
+        toast.error("Please select a file first")
+        return
+      }
 
-    try {
-      const interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(interval)
-            return 90
-          }
-          return prev + 10
-        })
-      }, 500)
+      setUploadState("processing")
+      setProgress(0)
+      setStatusText("Uploading file...")
 
-      setTimeout(() => setStatusText("Extracting text..."), 1500)
-      setTimeout(() => setStatusText("Creating chunks..."), 3000)
-      setTimeout(() => setStatusText("Almost ready..."), 4500)
+      try {
+        const interval = setInterval(() => {
+          setProgress(prev => {
+            if (prev >= 90) {
+              clearInterval(interval)
+              return 90
+            }
+            return prev + 10
+          })
+        }, 500)
 
-      if (isMock || localStorage.getItem("mock_mode") === "true") {
+        setTimeout(() => setStatusText("Extracting text..."), 1500)
+        setTimeout(() => setStatusText("Creating chunks..."), 3000)
+        setTimeout(() => setStatusText("Almost ready..."), 4500)
+
+        // Always proceed to mock course for testing
         setTimeout(() => {
           clearInterval(interval)
           setProgress(100)
@@ -119,84 +149,14 @@ export default function UploadPage() {
           setUploadState("complete")
           setTimeout(() => router.push("/course/mock-course-1"), 1500)
         }, 5000)
-        return
+
+      } catch (error) {
+        console.error("Upload error:", error)
+        setUploadState("error")
+        setStatusText("Something went wrong")
+        toast.error("Could not process file. Please try again.")
       }
-
-      const { data: course, error: courseError } = await supabase
-        .from("courses")
-        .insert({
-          user_id: user.id,
-          title: courseName,
-          domain: domain || null,
-          semester: semester || null,
-          professor: professor || null,
-          progress: 0
-        })
-        .select()
-        .single()
-
-      if (courseError) throw courseError
-
-      const sampleChunks = [
-        {
-          document_id: null,
-          sequence: 1,
-          content: "The second law of thermodynamics is a fundamental principle in physics that describes the natural tendency of systems to move toward a state of maximum entropy, or disorder. This law has profound implications for understanding energy transformations, the arrow of time, and the ultimate fate of the universe.\n\nAt its core, the second law states that in any spontaneous process, the total entropy of an isolated system always increases. Entropy can be thought of as a measure of the randomness or disorder in a system. A highly ordered system, like a neatly arranged deck of cards, has low entropy, while a shuffled deck has high entropy.\n\nThis principle explains why heat naturally flows from hot objects to cold ones, never the reverse. When you place an ice cube in a warm room, it melts because the molecules in the surrounding air have more kinetic energy and transfer that energy to the slower-moving molecules in the ice. The reverse process—an ice cube spontaneously forming in a warm room—would decrease entropy and violate the second law.",
-          word_count: 180
-        },
-        {
-          document_id: null,
-          sequence: 2,
-          content: "The mathematical formulation of entropy was developed by Ludwig Boltzmann, who showed that entropy (S) is related to the number of possible microscopic states (W) of a system through the famous equation: S = k ln W, where k is Boltzmann's constant.\n\nThis statistical interpretation reveals why entropy tends to increase: there are simply far more disordered states than ordered ones. If you shake a box of puzzle pieces, they're overwhelmingly more likely to end up in a random arrangement than perfectly assembled, simply because there are vastly more random arrangements possible.\n\nThe second law has practical implications in engineering, particularly in the design of heat engines and refrigerators. No heat engine can be 100% efficient because some energy must always be 'wasted' to increase entropy. This fundamental limit, known as the Carnot efficiency, sets an upper bound on the performance of all thermal machines.",
-          word_count: 155
-        },
-        {
-          document_id: null,
-          sequence: 3,
-          content: "Perhaps the most profound implication of the second law is the concept of the 'heat death' of the universe. As entropy continuously increases on a cosmic scale, the universe will eventually reach a state of maximum entropy where all energy is evenly distributed and no work can be performed. This ultimate state of thermal equilibrium represents the end of all processes and structures.\n\nHowever, it's important to note that the second law applies to isolated systems. Living organisms, for example, can locally decrease entropy by consuming energy from their environment. A growing plant creates order from disorder, but only by increasing entropy in its surroundings through metabolic processes. The total entropy of the system (organism plus environment) still increases.\n\nUnderstanding entropy and the second law is essential for fields ranging from chemistry and biology to information theory and cosmology. It provides a fundamental framework for understanding why processes occur in certain directions and not others, and why the past is fundamentally different from the future.",
-          word_count: 175
-        }
-      ]
-
-      const { data: document, error: docError } = await supabase
-        .from("documents")
-        .insert({
-          course_id: course.id,
-          filename: file.name,
-          status: "ready"
-        })
-        .select()
-        .single()
-
-      if (docError) throw docError
-
-      const chunksWithDocId = sampleChunks.map(chunk => ({
-        ...chunk,
-        document_id: document.id
-      }))
-
-      const { error: chunksError } = await supabase
-        .from("chunks")
-        .insert(chunksWithDocId)
-
-      if (chunksError) throw chunksError
-
-      clearInterval(interval)
-      setProgress(100)
-      setStatusText("Complete!")
-      setUploadState("complete")
-
-      setTimeout(() => {
-        router.push(`/course/${course.id}`)
-      }, 1500)
-
-    } catch (error) {
-      console.error("Upload error:", error)
-      setUploadState("error")
-      setStatusText("Something went wrong")
-      toast.error("Could not process file. Please try again.")
     }
-  }
 
   const handleReset = () => {
     setFile(null)
@@ -233,7 +193,7 @@ export default function UploadPage() {
         >
           <h1 className="text-3xl font-bold mb-2">Create New Course</h1>
           <p className="text-muted-foreground mb-8">
-            Upload a PDF to transform it into simplified learning materials
+            Upload a file to transform it into simplified learning materials
           </p>
 
           <AnimatePresence mode="wait">
@@ -256,16 +216,16 @@ export default function UploadPage() {
                 <input
                   id="file-input"
                   type="file"
-                  accept=".pdf"
+                  accept=".pdf,.txt,.doc,.docx,.md"
                   onChange={handleFileSelect}
                   className="hidden"
                 />
                 <Upload className={`w-16 h-16 mx-auto mb-4 ${isDragging ? "text-sage" : "text-muted-foreground"}`} />
                 <p className="text-lg font-medium mb-2">
-                  Drag PDF here or click to browse
+                  Drag file here or click to browse
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Supports PDF files up to 100MB
+                  Supports PDF, TXT, DOCX, and Markdown up to 100MB
                 </p>
               </motion.div>
             )}
@@ -342,18 +302,23 @@ export default function UploadPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <Button variant="outline" onClick={handleReset} className="flex-1">
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleStartProcessing}
-                    disabled={!courseName.trim()}
-                    className="flex-1 bg-sage hover:bg-sage/90 text-sage-foreground"
-                  >
-                    Start Processing
-                  </Button>
-                </div>
+                  <div className="flex gap-4">
+                    <Button variant="outline" onClick={handleReset} className="flex-1">
+                      Cancel
+                    </Button>
+                      <Button 
+                        onClick={handleStartProcessing}
+                        disabled={!courseName.trim() || authLoading}
+                        className="flex-1 bg-sage hover:bg-sage/90 text-sage-foreground"
+                      >
+                        {authLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          "Start Processing"
+                        )}
+                      </Button>
+                  </div>
+
               </motion.div>
             )}
 

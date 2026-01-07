@@ -16,9 +16,20 @@ import {
   Send,
   RotateCcw,
   Play,
-  Pause
+  Pause,
+  Upload,
+  Plus,
+  PanelLeft,
+  PanelRight,
+  Menu,
+  FileText
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable"
 import { supabase, Chunk, Course } from "@/lib/supabase"
 
 type SelectionToolbarPosition = {
@@ -51,25 +62,25 @@ function SelectionToolbar({
       <Button
         variant="ghost"
         size="sm"
-        className="h-9 px-3 text-xs gap-1.5 hover:bg-sage/10 hover:text-sage"
+        className="h-9 px-3 text-xs gap-1.5 hover:bg-sage/10 hover:text-sage font-medium"
         onClick={onSimplify}
       >
         <Sparkles className="w-3.5 h-3.5" />
-        Simplify
+        ELI5
       </Button>
       <Button
         variant="ghost"
         size="sm"
-        className="h-9 px-3 text-xs gap-1.5 hover:bg-sage/10 hover:text-sage"
+        className="h-9 px-3 text-xs gap-1.5 hover:bg-sage/10 hover:text-sage font-medium"
         onClick={onExpand}
       >
         <Maximize2 className="w-3.5 h-3.5" />
-        Expand
+        Explain More
       </Button>
       <Button
         variant="ghost"
         size="sm"
-        className="h-9 px-3 text-xs gap-1.5 hover:bg-sage/10 hover:text-sage"
+        className="h-9 px-3 text-xs gap-1.5 hover:bg-sage/10 hover:text-sage font-medium"
         onClick={onShowDiagram}
       >
         <LineChart className="w-3.5 h-3.5" />
@@ -78,7 +89,7 @@ function SelectionToolbar({
       <Button
         variant="ghost"
         size="sm"
-        className="h-9 px-3 text-xs gap-1.5 hover:bg-sage/10 hover:text-sage"
+        className="h-9 px-3 text-xs gap-1.5 hover:bg-sage/10 hover:text-sage font-medium"
         onClick={onAskAI}
       >
         <MessageCircle className="w-3.5 h-3.5" />
@@ -94,16 +105,23 @@ function InlineExpansion({ content, onDismiss }: { content: string; onDismiss: (
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: "auto" }}
       exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-      className="my-4 bg-sage/5 border-l-2 border-sage rounded-lg p-5 relative"
+      transition={{ 
+        height: { duration: 0.18, ease: [0.4, 0, 0.2, 1] },
+        opacity: { duration: 0.14 }
+      }}
+      className="my-6 bg-sage/5 border-l-2 border-sage/30 rounded-r-lg p-6 relative group"
     >
+      <div className="absolute -left-[2px] top-0 bottom-0 w-[2px] bg-sage opacity-50" />
       <button
         onClick={onDismiss}
-        className="absolute top-3 right-3 w-6 h-6 rounded-full bg-surface hover:bg-muted flex items-center justify-center transition-colors"
+        className="absolute top-3 right-3 w-6 h-6 rounded-full bg-surface/50 opacity-0 group-hover:opacity-100 hover:bg-muted flex items-center justify-center transition-all"
       >
         <X className="w-3.5 h-3.5" />
       </button>
-      <p className="reading-text text-foreground pr-8">{content}</p>
+      <div className="flex items-start gap-3">
+        <Sparkles className="w-4 h-4 text-sage mt-1 shrink-0" />
+        <p className="reading-text text-foreground/90 italic pr-8 leading-relaxed">{content}</p>
+      </div>
     </motion.div>
   )
 }
@@ -221,60 +239,111 @@ function AnimatedDiagram({ isPlaying, onToggle, onReset }: { isPlaying: boolean;
   )
 }
 
+function DocumentOutline({ 
+  chunks, 
+  activeIndex, 
+  onSelect,
+  onClose
+}: { 
+  chunks: Chunk[], 
+  activeIndex: number, 
+  onSelect: (index: number) => void,
+  onClose: () => void
+}) {
+  return (
+    <div className="h-full flex flex-col bg-background border-r border-border">
+      <div className="p-4 border-b border-border flex items-center justify-between bg-surface/30">
+        <div className="flex items-center gap-2">
+          <FileText className="w-4 h-4 text-sage" />
+          <h3 className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Outline</h3>
+        </div>
+        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted" onClick={onClose}>
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
+        {chunks.map((chunk, i) => (
+          <button
+            key={chunk.id}
+            onClick={() => onSelect(i)}
+            className={`w-full text-left px-3 py-2.5 rounded-lg text-xs transition-all ${
+              activeIndex === i 
+                ? "bg-sage/10 text-sage font-semibold" 
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <div className="truncate">
+              {chunk.content.split("\n")[0].slice(0, 35)}...
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function VisualPanel({
   isOpen,
   onClose,
-  selectedText
+  selectedText,
+  isLoading = false
 }: {
   isOpen: boolean
   onClose: () => void
   selectedText: string
+  isLoading?: boolean
 }) {
   const [isPlaying, setIsPlaying] = useState(true)
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ width: 0, opacity: 0 }}
-          animate={{ width: "40%", opacity: 1 }}
-          exit={{ width: 0, opacity: 0 }}
-          transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-          className="h-full bg-elevated border-l border-border flex flex-col overflow-hidden"
-          style={{ minWidth: isOpen ? 400 : 0, maxWidth: 600 }}
-        >
-          <div className="p-4 border-b border-border flex items-center justify-between">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground truncate">
-                Visualizing: {selectedText.slice(0, 50)}...
-              </p>
-            </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onClose}>
-              <X className="w-4 h-4" />
-            </Button>
+    <div className="h-full bg-background border-l border-border flex flex-col overflow-hidden">
+      <div className="p-4 border-b border-border flex items-center justify-between bg-surface/30">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-sage" />
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Visual Context
+            </p>
           </div>
+          <p className="text-xs text-foreground/90 truncate italic mt-0.5">
+            "{selectedText.slice(0, 60)}{selectedText.length > 60 ? '...' : ''}"
+          </p>
+        </div>
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 hover:bg-muted" onClick={onClose}>
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
 
-          <div className="flex-1 bg-surface/50">
-            <AnimatedDiagram
-              isPlaying={isPlaying}
-              onToggle={() => setIsPlaying(!isPlaying)}
-              onReset={() => setIsPlaying(true)}
-            />
+      <div className="flex-1 bg-surface/10 relative">
+        {isLoading ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-12 gap-4">
+            <div className="w-full aspect-video skeleton-shimmer rounded-lg opacity-40" />
+            <div className="h-4 w-48 skeleton-shimmer rounded opacity-30" />
+            <p className="text-xs text-muted-foreground animate-pulse">Preparing visualization...</p>
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        ) : (
+          <AnimatedDiagram
+            isPlaying={isPlaying}
+            onToggle={() => setIsPlaying(!isPlaying)}
+            onReset={() => setIsPlaying(true)}
+          />
+        )}
+      </div>
+    </div>
   )
 }
 
 function ChatDrawer({
   isOpen,
-  onClose
+  onClose,
+  currentChunkTitle
 }: {
   isOpen: boolean
   onClose: () => void
+  currentChunkTitle?: string
 }) {
   const [message, setMessage] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([
     { role: "assistant", content: "Hi! I'm here to help you understand the material. Ask me anything about what you're reading." }
   ])
@@ -288,14 +357,18 @@ function ChatDrawer({
 
   const handleSend = () => {
     if (!message.trim()) return
-    setMessages([...messages, { role: "user", content: message }])
+    const userMsg = message
+    setMessages([...messages, { role: "user", content: userMsg }])
+    setMessage("")
+    setIsLoading(true)
+    
     setTimeout(() => {
       setMessages(prev => [...prev, {
         role: "assistant",
         content: "Think of entropy like the natural tendency of your room to get messy. Without putting in energy to clean it, things just naturally become more disordered over time. That's essentially what the second law of thermodynamics describes - systems naturally move toward disorder."
       }])
-    }, 1000)
-    setMessage("")
+      setIsLoading(false)
+    }, 1200)
   }
 
   return (
@@ -306,29 +379,33 @@ function ChatDrawer({
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-          className="fixed inset-x-0 bottom-0 z-50 h-[50vh] bg-elevated border-t border-border rounded-t-xl shadow-2xl flex flex-col"
-          style={{ backdropFilter: "blur(8px)" }}
+          className="fixed inset-x-0 bottom-0 z-50 h-[50vh] bg-elevated border-t border-border rounded-t-2xl shadow-2xl flex flex-col"
+          style={{ backdropFilter: "blur(12px)" }}
         >
-          <div className="h-14 border-b border-border flex items-center justify-between px-4">
-            <div>
-              <h3 className="font-medium">AI Assistant</h3>
-              <p className="text-xs text-muted-foreground">Ask about your course material</p>
+          <div className="h-14 border-b border-border flex items-center justify-between px-6 bg-surface/20">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-sage/10 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-sage" />
+              </div>
+                <div>
+                  <h3 className="text-sm font-semibold">Learning Assistant</h3>
+                </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-muted" onClick={onClose}>
               <X className="w-4 h-4" />
             </Button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.length === 1 && (
-              <div className="grid grid-cols-2 gap-2 mb-4">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+            {messages.length === 1 && !isLoading && (
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 {suggestions.map((suggestion) => (
                   <button
                     key={suggestion}
                     onClick={() => {
                       setMessage(suggestion)
                     }}
-                    className="p-3 text-sm text-left rounded-lg border border-border hover:bg-surface transition-colors"
+                    className="p-3 text-xs font-medium text-left rounded-xl border border-border bg-surface/30 hover:bg-surface hover:border-sage/30 transition-all text-muted-foreground hover:text-foreground"
                   >
                     {suggestion}
                   </button>
@@ -339,31 +416,41 @@ function ChatDrawer({
             {messages.map((msg, i) => (
               <div
                 key={i}
-                className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                className={`flex gap-4 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 {msg.role === "assistant" && (
-                  <div className="w-8 h-8 rounded-full bg-sage flex items-center justify-center shrink-0">
-                    <Sparkles className="w-4 h-4 text-sage-foreground" />
+                  <div className="w-8 h-8 rounded-full bg-sage/10 border border-sage/20 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4 text-sage" />
                   </div>
                 )}
                 <div
-                  className={`max-w-[70%] p-3 rounded-xl text-sm ${
+                  className={`max-w-[75%] p-4 rounded-2xl text-sm leading-relaxed ${
                     msg.role === "user"
-                      ? "bg-sage/10 rounded-br-sm"
-                      : "bg-surface border border-border rounded-bl-sm"
+                      ? "bg-sage text-sage-foreground rounded-tr-none shadow-sm"
+                      : "bg-surface border border-border rounded-tl-none text-foreground/90"
                   }`}
                 >
                   {msg.content}
                 </div>
-                {msg.role === "user" && (
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0" />
-                )}
               </div>
             ))}
+            
+            {isLoading && (
+              <div className="flex gap-4 justify-start">
+                <div className="w-8 h-8 rounded-full bg-sage/10 border border-sage/20 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 text-sage animate-pulse" />
+                </div>
+                <div className="bg-surface border border-border p-4 rounded-2xl rounded-tl-none flex gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-sage/40 bounce-dot" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-sage/40 bounce-dot" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-sage/40 bounce-dot" />
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="p-4 border-t border-border">
-            <div className="relative">
+          <div className="p-6 border-t border-border bg-surface/10">
+            <div className="relative max-w-3xl mx-auto">
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -373,15 +460,15 @@ function ChatDrawer({
                     handleSend()
                   }
                 }}
-                placeholder="Ask a question..."
-                className="w-full h-12 max-h-24 px-4 py-3 pr-12 bg-surface border border-border rounded-2xl resize-none text-sm focus:outline-none focus:ring-2 focus:ring-sage/50"
+                placeholder="Ask about this concept..."
+                className="w-full h-12 max-h-32 px-5 py-3.5 pr-14 bg-elevated border border-border rounded-2xl resize-none text-sm focus:outline-none focus:ring-2 focus:ring-sage/20 focus:border-sage/30 transition-all shadow-inner custom-scrollbar"
                 rows={1}
               />
               <Button
                 size="icon"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-sage hover:bg-sage/90"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-xl bg-sage hover:bg-sage/90 shadow-sm"
                 onClick={handleSend}
-                disabled={!message.trim()}
+                disabled={!message.trim() || isLoading}
               >
                 <Send className="w-4 h-4 text-sage-foreground" />
               </Button>
@@ -399,14 +486,19 @@ export default function CourseWorkspacePage() {
 
   const [course, setCourse] = useState<Course | null>(null)
   const [chunks, setChunks] = useState<Chunk[]>([])
-  const [currentChunk, setCurrentChunk] = useState(0)
+  const [activeChunkIndex, setActiveChunkIndex] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [isVisualLoading, setIsVisualLoading] = useState(false)
   const [selectedText, setSelectedText] = useState("")
   const [toolbarPosition, setToolbarPosition] = useState<SelectionToolbarPosition | null>(null)
-  const [expansion, setExpansion] = useState<{ index: number; content: string } | null>(null)
+  const [expansion, setExpansion] = useState<{ chunkId: string; content: string } | null>(null)
   const [visualPanelOpen, setVisualPanelOpen] = useState(false)
+  const [leftPanelOpen, setLeftPanelOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
-  const textCanvasRef = useRef<HTMLDivElement>(null)
+  const [isNavHovered, setIsNavHovered] = useState(false)
+  
+  const chunkRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const fetchCourseData = useCallback(async () => {
     if (courseId.startsWith("mock-")) {
@@ -477,6 +569,23 @@ export default function CourseWorkspacePage() {
     fetchCourseData()
   }, [fetchCourseData])
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = Number(entry.target.getAttribute("data-index"))
+            setActiveChunkIndex(index)
+          }
+        })
+      },
+      { threshold: 0.3 }
+    )
+
+    chunkRefs.current.forEach((ref) => observer.observe(ref))
+    return () => observer.disconnect()
+  }, [chunks])
+
   const handleTextSelection = useCallback(() => {
     const selection = window.getSelection()
     if (!selection || selection.isCollapsed) {
@@ -509,23 +618,25 @@ export default function CourseWorkspacePage() {
 
   const handleSimplify = () => {
     setExpansion({
-      index: currentChunk,
-      content: "Think of it like a messy room: without putting in energy to tidy up, things naturally get more disordered. That's entropy - the universe's tendency toward disorder. The second law says this always happens in isolated systems."
+      chunkId: chunks[activeChunkIndex].id,
+      content: `Simplifying "${selectedText.slice(0, 30)}...": Think of it like a messy room: without putting in energy to tidy up, things naturally get more disordered. This specific concept describes the statistical inevitability of disorder.`
     })
     setToolbarPosition(null)
   }
 
   const handleExpand = () => {
     setExpansion({
-      index: currentChunk,
-      content: "To understand this more deeply: Entropy is mathematically defined as S = k ln W, where k is Boltzmann's constant and W is the number of possible microscopic states. This equation shows that entropy is fundamentally about probability - there are vastly more ways for a system to be disordered than ordered, so disorder is statistically inevitable."
+      chunkId: chunks[activeChunkIndex].id,
+      content: `Expanding on "${selectedText.slice(0, 30)}...": To understand this more deeply, we must look at the microstates. Entropy (S) is fundamentally about probability - there are vastly more ways for a system to be disordered than ordered.`
     })
     setToolbarPosition(null)
   }
 
   const handleShowDiagram = () => {
+    setIsVisualLoading(true)
     setVisualPanelOpen(true)
     setToolbarPosition(null)
+    setTimeout(() => setIsVisualLoading(false), 1800)
   }
 
   const handleAskAI = () => {
@@ -533,24 +644,18 @@ export default function CourseWorkspacePage() {
     setToolbarPosition(null)
   }
 
-  const goToPrevChunk = () => {
-    if (currentChunk > 0) {
-      setCurrentChunk(currentChunk - 1)
-      setExpansion(null)
-    }
-  }
-
-  const goToNextChunk = () => {
-    if (currentChunk < chunks.length - 1) {
-      setCurrentChunk(currentChunk + 1)
-      setExpansion(null)
+  const scrollToChunk = (index: number) => {
+    const chunkId = chunks[index].id
+    const element = chunkRefs.current.get(chunkId)
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" })
     }
   }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") goToPrevChunk()
-      if (e.key === "ArrowRight") goToNextChunk()
+      if (e.key === "ArrowLeft") scrollToChunk(Math.max(0, activeChunkIndex - 1))
+      if (e.key === "ArrowRight") scrollToChunk(Math.min(chunks.length - 1, activeChunkIndex + 1))
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault()
         setChatOpen(!chatOpen)
@@ -562,118 +667,267 @@ export default function CourseWorkspacePage() {
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [currentChunk, chunks.length, chatOpen])
+  }, [activeChunkIndex, chunks.length, chatOpen])
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-full max-w-3xl p-12 space-y-4">
-          <div className="h-8 w-48 skeleton-shimmer rounded" />
-          <div className="h-4 w-full skeleton-shimmer rounded" />
-          <div className="h-4 w-full skeleton-shimmer rounded" />
-          <div className="h-4 w-3/4 skeleton-shimmer rounded" />
+        <div className="w-full max-w-3xl p-12 space-y-8">
+          <div className="h-10 w-64 skeleton-shimmer rounded-lg" />
+          <div className="space-y-4">
+            <div className="h-4 w-full skeleton-shimmer rounded" />
+            <div className="h-4 w-full skeleton-shimmer rounded" />
+            <div className="h-4 w-5/6 skeleton-shimmer rounded" />
+          </div>
+          <div className="space-y-4 pt-8">
+            <div className="h-4 w-full skeleton-shimmer rounded" />
+            <div className="h-4 w-4/5 skeleton-shimmer rounded" />
+          </div>
         </div>
       </div>
     )
   }
 
-  const currentContent = chunks[currentChunk]?.content || ""
-
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="h-14 border-b border-border bg-surface/50 backdrop-blur-sm flex items-center px-4 sticky top-0 z-40">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="hidden sm:inline">Dashboard</span>
-        </Link>
-        <div className="flex-1 text-center">
-          <h1 className="font-medium text-foreground truncate max-w-md mx-auto">
-            {course?.title || "Course"}
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
+      <header className="h-14 border-b border-border bg-surface/40 backdrop-blur-md flex items-center px-4 md:px-6 sticky top-0 z-40 shrink-0">
+        <div className="flex items-center gap-2 md:gap-3">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className={`h-9 w-9 rounded-xl transition-all ${leftPanelOpen ? 'bg-sage/10 text-sage' : 'text-muted-foreground'}`}
+            onClick={() => setLeftPanelOpen(!leftPanelOpen)}
+            title="Document Outline"
+          >
+            <PanelLeft className="w-4 h-4" />
+          </Button>
+          <div className="w-px h-4 bg-border/50 hidden md:block" />
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 text-[10px] md:text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-sage transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden md:inline">Dashboard</span>
+          </Link>
+        </div>
+        <div className="flex-1 text-center px-2">
+          <h1 className="text-xs md:text-sm font-semibold text-foreground/90 truncate max-w-[150px] md:max-w-md mx-auto">
+            {course?.title || "Course Workspace"}
           </h1>
         </div>
-        <div className="w-20" />
+        <div className="flex items-center gap-2 md:gap-4">
+          <div className="h-2 w-16 md:w-32 bg-surface rounded-full overflow-hidden border border-border/50 hidden sm:block">
+            <div
+              className="h-full bg-sage transition-all duration-500 ease-out"
+              style={{ width: `${((activeChunkIndex + 1) / chunks.length) * 100}%` }}
+            />
+          </div>
+          <div className="w-px h-4 bg-border/50 hidden md:block" />
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className={`h-9 w-9 rounded-xl transition-all ${visualPanelOpen ? 'bg-sage/10 text-sage' : 'text-muted-foreground'}`}
+            onClick={() => setVisualPanelOpen(!visualPanelOpen)}
+            title="Visual Context"
+          >
+            <PanelRight className="w-4 h-4" />
+          </Button>
+        </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        <main
-          className={`flex-1 overflow-y-auto transition-all duration-300 ${
-            visualPanelOpen ? "max-w-[60%]" : ""
-          }`}
-        >
-          <div className="max-w-[800px] mx-auto px-12 py-16">
-            <div
-              ref={textCanvasRef}
-              className="bg-elevated rounded-xl p-12 shadow-sm border border-border"
+      <div className="flex-1 flex overflow-hidden relative">
+        <AnimatePresence>
+          {leftPanelOpen && (
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="absolute inset-y-0 left-0 z-50 w-72 lg:hidden shadow-2xl"
             >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentChunk}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.14 }}
-                >
-                  {currentContent.split("\n\n").map((paragraph, i) => (
-                    <div key={i}>
-                      <p className="reading-text text-foreground mb-6 last:mb-0">
-                        {paragraph}
-                      </p>
-                      {expansion && expansion.index === currentChunk && i === 0 && (
-                        <InlineExpansion
-                          content={expansion.content}
-                          onDismiss={() => setExpansion(null)}
-                        />
-                      )}
-                    </div>
-                  ))}
-                </motion.div>
-              </AnimatePresence>
-            </div>
+              <DocumentOutline 
+                chunks={chunks} 
+                activeIndex={activeChunkIndex} 
+                onSelect={(idx) => {
+                  scrollToChunk(idx)
+                  setLeftPanelOpen(false)
+                }}
+                onClose={() => setLeftPanelOpen(false)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            <div className="mt-8 flex items-center justify-between">
-              <Button
-                variant="ghost"
-                onClick={goToPrevChunk}
-                disabled={currentChunk === 0}
-                className="gap-2"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Previous
-              </Button>
+        <AnimatePresence>
+          {visualPanelOpen && (
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="absolute inset-y-0 right-0 z-50 w-full sm:w-80 lg:hidden shadow-2xl"
+            >
+              <VisualPanel
+                isOpen={visualPanelOpen}
+                onClose={() => setVisualPanelOpen(false)}
+                selectedText={selectedText}
+                isLoading={isVisualLoading}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-              <div className="flex items-center gap-4">
-                <div className="h-1 w-32 bg-surface rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-sage transition-all duration-300"
-                    style={{ width: `${((currentChunk + 1) / chunks.length) * 100}%` }}
+        <ResizablePanelGroup direction="horizontal">
+          {leftPanelOpen && (
+            <>
+              <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="hidden lg:block">
+                <div className="h-full">
+                  <DocumentOutline 
+                    chunks={chunks} 
+                    activeIndex={activeChunkIndex} 
+                    onSelect={scrollToChunk}
+                    onClose={() => setLeftPanelOpen(false)}
                   />
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  {currentChunk + 1} / {chunks.length}
-                </span>
-              </div>
+              </ResizablePanel>
+              <ResizableHandle className="bg-border/30 w-1 hover:bg-sage/30 transition-colors hidden lg:flex" />
+            </>
+          )}
 
-              <Button
-                variant="ghost"
-                onClick={goToNextChunk}
-                disabled={currentChunk === chunks.length - 1}
-                className="gap-2"
-              >
-                Next
-                <ChevronRight className="w-4 h-4" />
-              </Button>
+          <ResizablePanel defaultSize={100}>
+            <main 
+              ref={scrollContainerRef}
+              className="h-full overflow-y-auto scroll-smooth custom-scrollbar bg-elevated"
+            >
+              <div className="max-w-[800px] mx-auto px-6 md:px-12 py-12 md:py-24 space-y-16 md:space-y-24">
+                {chunks.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-24 text-center">
+                    <div className="w-20 h-20 bg-sage/5 rounded-3xl border border-sage/10 flex items-center justify-center mb-8">
+                      <Plus className="w-10 h-10 text-sage/40" />
+                    </div>
+                    <h2 className="text-xl font-semibold mb-3">Course is empty</h2>
+                    <p className="text-muted-foreground mb-10 max-w-xs leading-relaxed">
+                      This course doesn't have any processed content yet.
+                    </p>
+                    <Link href="/upload">
+                      <Button className="bg-sage hover:bg-sage/90 text-sage-foreground px-8 h-12 rounded-xl shadow-lg shadow-sage/10">
+                        Upload Document
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  chunks.map((chunk, chunkIndex) => (
+                    <div 
+                      key={chunk.id} 
+                      ref={(el) => { if (el) chunkRefs.current.set(chunk.id, el) }}
+                      data-index={chunkIndex}
+                      className="relative"
+                    >
+                      <div className="absolute -left-6 md:-left-12 top-0 bottom-0 w-1 flex flex-col items-center">
+                        <div className={`w-2 h-2 rounded-full border-2 transition-all duration-500 ${
+                          activeChunkIndex === chunkIndex ? "bg-sage border-sage scale-125" : "bg-transparent border-muted"
+                        }`} />
+                        <div className="flex-1 w-px bg-muted/30 my-4" />
+                      </div>
+
+                      <div className="space-y-8">
+                        {chunk.content.split("\n\n").map((paragraph, pIndex) => (
+                          <motion.div
+                            key={pIndex}
+                            initial={{ opacity: 0, y: 10 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-50px" }}
+                            transition={{ duration: 0.14, delay: pIndex * 0.1 }}
+                            className="relative"
+                          >
+                            <p className="reading-text text-foreground/90 selection:bg-sage/20">
+                              {paragraph}
+                            </p>
+                            
+                            <div className="mt-8 h-px w-full bg-border/20" />
+
+                            {expansion && expansion.chunkId === chunk.id && pIndex === 0 && (
+                              <InlineExpansion
+                                content={expansion.content}
+                                onDismiss={() => setExpansion(null)}
+                              />
+                            )}
+                          </motion.div>
+                        ))}
+                      </div>
+
+                      {chunkIndex < chunks.length - 1 && (
+                        <div className="pt-16 md:pt-24 flex items-center justify-center gap-4">
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent opacity-50" />
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent opacity-50" />
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </main>
+          </ResizablePanel>
+
+          {visualPanelOpen && (
+            <>
+              <ResizableHandle className="bg-border/30 w-1 hover:bg-sage/30 transition-colors hidden lg:flex" />
+              <ResizablePanel defaultSize={30} minSize={20} maxSize={50} className="hidden lg:block">
+                <div className="h-full">
+                  <VisualPanel
+                    isOpen={visualPanelOpen}
+                    onClose={() => setVisualPanelOpen(false)}
+                    selectedText={selectedText}
+                    isLoading={isVisualLoading}
+                  />
+                </div>
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
+      </div>
+
+      <div 
+        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 transition-all duration-300"
+        onMouseEnter={() => setIsNavHovered(true)}
+        onMouseLeave={() => setIsNavHovered(false)}
+      >
+        <div className={`bg-elevated/80 backdrop-blur-xl border border-border shadow-2xl rounded-2xl flex items-center p-1.5 transition-all duration-300 ${
+          isNavHovered ? "opacity-100 scale-100" : "opacity-40 scale-95 hover:opacity-100 hover:scale-100"
+        }`}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => scrollToChunk(Math.max(0, activeChunkIndex - 1))}
+            disabled={activeChunkIndex === 0}
+            className={`h-10 w-10 rounded-xl transition-all ${
+              isNavHovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
+            }`}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
+
+          <div className="px-4 flex flex-col items-center min-w-[120px]">
+            <div className="h-1 w-24 bg-surface rounded-full overflow-hidden">
+              <div
+                className="h-full bg-sage transition-all duration-300"
+                style={{ width: `${((activeChunkIndex + 1) / chunks.length) * 100}%` }}
+              />
             </div>
           </div>
-        </main>
 
-        <VisualPanel
-          isOpen={visualPanelOpen}
-          onClose={() => setVisualPanelOpen(false)}
-          selectedText={selectedText}
-        />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => scrollToChunk(Math.min(chunks.length - 1, activeChunkIndex + 1))}
+            disabled={activeChunkIndex === chunks.length - 1}
+            className={`h-10 w-10 rounded-xl transition-all ${
+              isNavHovered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
+            }`}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -691,13 +945,17 @@ export default function CourseWorkspacePage() {
       {!chatOpen && (
         <button
           onClick={() => setChatOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-sage hover:bg-sage/90 text-sage-foreground shadow-lg flex items-center justify-center transition-all hover:scale-105 z-40"
+          className="fixed bottom-8 right-8 w-14 h-14 rounded-2xl bg-sage hover:bg-sage/90 text-sage-foreground shadow-xl shadow-sage/20 flex items-center justify-center transition-all hover:scale-105 hover:-rotate-3 z-40"
         >
           <MessageCircle className="w-6 h-6" />
         </button>
       )}
 
-      <ChatDrawer isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+      <ChatDrawer 
+        isOpen={chatOpen} 
+        onClose={() => setChatOpen(false)} 
+        currentChunkTitle={course?.title}
+      />
     </div>
   )
 }
