@@ -261,7 +261,7 @@ function DocumentOutline({
   isCollapsed?: boolean
 }) {
   return (
-    <div className={`h-full flex flex-col bg-elevated rounded-xl border border-border/40 shadow-lg m-2 z-10 transition-all duration-140 ${isCollapsed ? "w-[64px]" : ""}`}>
+    <div className={`h-full flex flex-col bg-elevated rounded-xl border border-border/40 shadow-lg m-2 z-10 ${isCollapsed ? "w-[64px]" : ""}`}>
       <div className={`p-4 border-b border-border/40 flex items-center bg-surface/30 rounded-t-xl ${isCollapsed ? "justify-center" : "justify-between"}`}>
         <div className="flex items-center gap-2">
           <Menu className="w-4 h-4 text-sage" />
@@ -318,7 +318,7 @@ function VisualPanel({
   const [isPlaying, setIsPlaying] = useState(true)
 
   return (
-    <div className={`h-full flex flex-col bg-elevated rounded-xl border border-border/40 shadow-lg m-2 z-10 overflow-hidden transition-all duration-140 ${isCollapsed ? "w-[64px]" : ""}`}>
+    <div className={`h-full flex flex-col bg-elevated rounded-xl border border-border/40 shadow-lg m-2 z-10 overflow-hidden ${isCollapsed ? "w-[64px]" : ""}`}>
       <div className={`p-4 border-b border-border/40 flex items-center bg-surface/30 rounded-t-xl ${isCollapsed ? "justify-center" : "justify-between"}`}>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -545,7 +545,7 @@ export default function CourseWorkspacePage() {
     const panel = leftPanelRef.current
     if (panel) {
       if (leftPanelOpen) {
-        panel.expand()
+        panel.resize(20)
       } else {
         panel.collapse()
       }
@@ -556,7 +556,7 @@ export default function CourseWorkspacePage() {
     const panel = rightPanelRef.current
     if (panel) {
       if (visualPanelOpen) {
-        panel.expand()
+        panel.resize(30)
       } else {
         panel.collapse()
       }
@@ -950,8 +950,8 @@ export default function CourseWorkspacePage() {
           <ResizablePanelGroup direction="horizontal" className="flex-1">
             <ResizablePanel
               ref={leftPanelRef}
-              defaultSize={leftPanelOpen ? 20 : 0}
-              minSize={leftPanelOpen ? 5 : 0}
+              defaultSize={0}
+              minSize={0}
               maxSize={30}
               collapsible={true}
               onCollapse={() => setLeftPanelOpen(false)}
@@ -961,7 +961,7 @@ export default function CourseWorkspacePage() {
                   setIsLeftPanelCollapsed(size < 12)
                 }
               }}
-              className={`${leftPanelOpen ? "block" : "hidden"} lg:block transition-all duration-140`}
+              className={`${leftPanelOpen ? "block" : "hidden"} lg:block`}
             >
               <div className="h-full">
                 <DocumentOutline 
@@ -1074,23 +1074,23 @@ export default function CourseWorkspacePage() {
                </main>
              </ResizablePanel>
    
-               <ResizableHandle className={`hidden lg:flex transition-opacity duration-140 ${!visualPanelOpen && "opacity-0 pointer-events-none"}`} />
-   
-             <ResizablePanel
-               ref={rightPanelRef}
-               defaultSize={visualPanelOpen ? 30 : 0}
-               minSize={visualPanelOpen ? 5 : 0}
-               maxSize={50}
-               collapsible={true}
-               onCollapse={() => setVisualPanelOpen(false)}
-               onExpand={() => setVisualPanelOpen(true)}
-               onResize={(size) => {
-                 if (visualPanelOpen) {
-                   setIsRightPanelCollapsed(size < 12)
-                 }
-               }}
-               className={`${visualPanelOpen ? "block" : "hidden"} lg:block transition-all duration-140`}
-             >
+              <ResizableHandle className={`hidden lg:flex ${!visualPanelOpen && "opacity-0 pointer-events-none"}`} />
+
+            <ResizablePanel
+              ref={rightPanelRef}
+              defaultSize={0}
+              minSize={0}
+              maxSize={50}
+              collapsible={true}
+              onCollapse={() => setVisualPanelOpen(false)}
+              onExpand={() => setVisualPanelOpen(true)}
+              onResize={(size) => {
+                if (visualPanelOpen) {
+                  setIsRightPanelCollapsed(size < 12)
+                }
+              }}
+              className={`${visualPanelOpen ? "block" : "hidden"} lg:block`}
+            >
              <div className="h-full">
                <VisualPanel
                  isOpen={visualPanelOpen}
