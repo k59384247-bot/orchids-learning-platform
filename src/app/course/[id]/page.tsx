@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/popover"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { supabase, Chunk, Course } from "@/lib/supabase"
 import type { ImperativePanelHandle } from "react-resizable-panels"
 
@@ -565,7 +566,7 @@ export default function CourseWorkspacePage() {
 
   const fetchCourseData = useCallback(async () => {
     if (courseId.startsWith("mock-")) {
-      setCourse({
+      const mockCourse = {
         id: courseId,
         user_id: "mock-user-123",
         title: courseId === "mock-course-1" ? "Introduction to Thermodynamics" : "Advanced Organic Chemistry",
@@ -573,7 +574,9 @@ export default function CourseWorkspacePage() {
         progress: 50,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      })
+      }
+      setCourse(mockCourse)
+      setTempTitle(mockCourse.title)
       
       setChunks([
         {
@@ -746,6 +749,16 @@ export default function CourseWorkspacePage() {
     }
 
     setIsSavingTitle(true)
+
+    if (courseId.startsWith("mock-")) {
+      if (course) {
+        setCourse({ ...course, title: tempTitle })
+      }
+      setIsSavingTitle(false)
+      setIsPopoverOpen(false)
+      return
+    }
+
     const { data, error } = await supabase
       .from("courses")
       .update({ title: tempTitle })
@@ -981,26 +994,20 @@ export default function CourseWorkspacePage() {
                 ref={scrollContainerRef}
                 className="h-full overflow-y-auto scroll-smooth custom-scrollbar bg-background p-6"
               >
-                <div className="max-w-[850px] mx-auto bg-elevated rounded-2xl border border-border/40 shadow-sm p-8 md:p-12 min-h-full">
-                  <div className="flex items-center justify-center gap-2 mb-12">
-                    <Button
-                      variant={showSimplified ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setShowSimplified(true)}
-                      className={`rounded-full px-6 transition-all ${showSimplified ? "bg-sage text-sage-foreground shadow-md" : "text-muted-foreground"}`}
-                    >
-                      Simplified
-                    </Button>
-                    <Button
-                      variant={!showSimplified ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setShowSimplified(false)}
-                      className={`rounded-full px-6 transition-all ${!showSimplified ? "bg-sage text-sage-foreground shadow-md" : "text-muted-foreground"}`}
-                    >
-                      Original
-                    </Button>
+                <div className="max-w-[850px] mx-auto mb-6 flex items-center justify-start">
+                  <div className="flex items-center gap-3 bg-elevated/40 backdrop-blur-sm px-4 py-2 rounded-xl border border-border/40 shadow-sm">
+                    <Switch 
+                      id="text-mode" 
+                      checked={showSimplified} 
+                      onCheckedChange={setShowSimplified}
+                      className="data-[state=checked]:bg-sage"
+                    />
+                    <Label htmlFor="text-mode" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none">
+                      {showSimplified ? "Simplified Text" : "Original Text"}
+                    </Label>
                   </div>
-
+                </div>
+                <div className="max-w-[850px] mx-auto bg-elevated rounded-2xl border border-border/40 shadow-sm p-8 md:p-12 min-h-full">
                   {chunks.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 text-center">
                       <div className="w-20 h-20 bg-sage/5 rounded-3xl border border-sage/10 flex items-center justify-center mb-8">

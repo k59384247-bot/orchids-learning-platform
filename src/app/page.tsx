@@ -118,7 +118,7 @@ export default function LandingPage() {
                 </Button>
               </Link>
               <button className="flex items-center gap-2 text-[16px] font-medium text-sage hover:underline ml-4">
-                Watch Demo <ArrowRight className="w-4 h-4" />
+                <Play className="w-4 h-4 fill-current" /> See how it works <ArrowRight className="w-4 h-4" />
               </button>
             </div>
             <div className="mt-[48px]">
