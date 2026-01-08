@@ -128,8 +128,7 @@ function ExplanationCard({
     setIsDarkMode(document.documentElement.classList.contains('dark'));
   }, []);
   
-  const borderColor = isSimplify ? '#DBAC5A' : '#3B849F';
-  const bgColor = isDarkMode ? '#1A1A1A' : '#F7F1EA';
+  const bgColor = isDarkMode ? 'rgba(26, 26, 26, 0.85)' : 'rgba(247, 241, 234, 0.85)';
   
   const [position, setPosition] = useState({ top: 0, left: 0, pointerX: 0, isBelow: true });
 
@@ -195,17 +194,16 @@ function ExplanationCard({
               transform: "translateX(-50%)",
               borderLeft: "10px solid transparent",
               borderRight: "10px solid transparent",
-              borderBottom: position.isBelow ? `10px solid ${borderColor}` : "none",
-              borderTop: position.isBelow ? "none" : `10px solid ${borderColor}`,
+              borderBottom: position.isBelow ? `10px solid ${bgColor}` : "none",
+              borderTop: position.isBelow ? "none" : `10px solid ${bgColor}`,
             }}
           />
         )}
 
         <div 
-          className="relative rounded-[22px] shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-2 p-4"
+          className="relative rounded-[22px] shadow-[0_12px_40px_rgba(0,0,0,0.15)] border border-border/40 backdrop-blur-xl p-4 overflow-hidden"
           style={{ 
             backgroundColor: bgColor,
-            borderColor: borderColor
           }}
         >
           <div className="flex flex-col gap-2">
