@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   ArrowLeft,
+  ArrowRight,
   ChevronLeft,
   ChevronRight,
   Sparkles,
@@ -22,7 +23,8 @@ import {
   PanelLeft,
   Cuboid,
   Menu,
-  FileText
+  FileText,
+  Check
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -248,57 +250,60 @@ function AnimatedDiagram({ isPlaying, onToggle, onReset }: { isPlaying: boolean;
   )
 }
 
-function DocumentOutline({ 
-  chunks, 
+type ChapterItem = {
+  id: string
+  title: string
+  completed: boolean
+}
+
+function ChapterOutline({ 
+  chapters, 
   activeIndex, 
   onSelect,
-  onClose,
-  isCollapsed = false
+  onToggleComplete
 }: { 
-  chunks: Chunk[], 
-  activeIndex: number, 
-  onSelect: (index: number) => void,
-  onClose: () => void,
-  isCollapsed?: boolean
+  chapters: ChapterItem[]
+  activeIndex: number
+  onSelect: (index: number) => void
+  onToggleComplete: (index: number) => void
 }) {
   return (
-    <div className={`h-full flex flex-col bg-elevated rounded-xl border border-border/40 shadow-lg m-2 z-10 ${isCollapsed ? "w-[64px]" : ""}`}>
-      <div className={`p-4 border-b border-border/40 flex items-center bg-surface/30 rounded-t-xl ${isCollapsed ? "justify-center" : "justify-between"}`}>
-        <div className="flex items-center gap-2">
-          <Menu className="w-4 h-4 text-sage" />
-          {!isCollapsed && <h3 className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Outline</h3>}
-        </div>
-        {!isCollapsed && (
-          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted" onClick={onClose}>
-            <X className="w-4 h-4" />
-          </Button>
-        )}
-      </div>
-      <div className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
-        {chunks.map((chunk, i) => (
-          <button
-            key={chunk.id}
+    <div className="space-y-1">
+      {chapters.map((chapter, i) => (
+        <div key={chapter.id}>
+          <div
             onClick={() => onSelect(i)}
-            className={`w-full text-left rounded-lg text-xs transition-all flex items-center gap-3 ${
-              isCollapsed ? "justify-center p-2.5" : "px-3 py-2.5"
-            } ${
+            className={`w-full text-left rounded-lg transition-all flex items-start gap-3 p-3 cursor-pointer ${
               activeIndex === i 
-                ? "bg-sage/10 text-sage font-semibold shadow-sm" 
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-sage/5" 
+                : "hover:bg-muted/50"
             }`}
-            title={isCollapsed ? chunk.content.split("\n")[0].slice(0, 35) : ""}
           >
-            <div className={`w-4 h-4 shrink-0 flex items-center justify-center rounded-full border border-current/20 text-[10px] ${activeIndex === i ? "bg-sage/20" : ""}`}>
-              {i + 1}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleComplete(i)
+              }}
+              className={`mt-0.5 w-5 h-5 shrink-0 flex items-center justify-center rounded border-2 transition-all ${
+                chapter.completed 
+                  ? "bg-sage border-sage text-sage-foreground" 
+                  : "border-border/60 hover:border-sage/50"
+              }`}
+            >
+              {chapter.completed && <Check className="w-3 h-3" />}
+            </button>
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm leading-snug ${
+                activeIndex === i 
+                  ? "font-semibold text-foreground" 
+                  : "text-muted-foreground"
+              }`}>
+                {chapter.title}
+              </p>
             </div>
-            {!isCollapsed && (
-              <div className="truncate">
-                {chunk.content.split("\n")[0].slice(0, 35)}...
-              </div>
-            )}
-          </button>
-        ))}
-      </div>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -527,31 +532,49 @@ export default function CourseWorkspacePage() {
   const [toolbarPosition, setToolbarPosition] = useState<SelectionToolbarPosition | null>(null)
   const [expansion, setExpansion] = useState<{ chunkId: string; pIndex: number; content: string } | null>(null)
   const [visualPanelOpen, setVisualPanelOpen] = useState(false)
-  const [leftPanelOpen, setLeftPanelOpen] = useState(false)
-  const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false)
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
-  const [isNavHovered, setIsNavHovered] = useState(false)
   const [showSimplified, setShowSimplified] = useState(true)
   const [tempTitle, setTempTitle] = useState("")
   const [isSavingTitle, setIsSavingTitle] = useState(false)
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+  const [completedChunkIds, setCompletedChunkIds] = useState<Set<string>>(new Set())
+  
+  const chapters = useMemo(() => {
+    return chunks.map((chunk, index) => {
+      // Extract the first sentence or first 60 characters as title
+      const firstParagraph = chunk.content.split("\n\n")[0]
+      const firstSentence = firstParagraph.split(/[.!?]/)[0]
+      const title = firstSentence.length > 80 
+        ? firstSentence.slice(0, 80) + "..." 
+        : firstSentence || `Section ${index + 1}`
+
+      return {
+        id: chunk.id,
+        title,
+        completed: completedChunkIds.has(chunk.id)
+      }
+    })
+  }, [chunks, completedChunkIds])
   
   const chunkRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const leftPanelRef = useRef<ImperativePanelHandle>(null)
   const rightPanelRef = useRef<ImperativePanelHandle>(null)
 
-  useEffect(() => {
-    const panel = leftPanelRef.current
-    if (panel) {
-      if (leftPanelOpen) {
-        panel.resize(20)
+  const handleToggleChapterComplete = useCallback((index: number) => {
+    const chunkId = chunks[index]?.id
+    if (!chunkId) return
+    
+    setCompletedChunkIds(prev => {
+      const next = new Set(prev)
+      if (next.has(chunkId)) {
+        next.delete(chunkId)
       } else {
-        panel.collapse()
+        next.add(chunkId)
       }
-    }
-  }, [leftPanelOpen])
+      return next
+    })
+  }, [chunks])
 
   useEffect(() => {
     const panel = rightPanelRef.current
@@ -776,8 +799,10 @@ export default function CourseWorkspacePage() {
   }
 
   const scrollToChunk = (index: number) => {
-    const chunkId = chunks[index].id
-    const element = chunkRefs.current.get(chunkId)
+    const chunk = chunks[index]
+    if (!chunk) return
+    
+    const element = chunkRefs.current.get(chunk.id)
     if (element) {
       element.scrollIntoView({ behavior: "smooth" })
     }
@@ -823,16 +848,6 @@ export default function CourseWorkspacePage() {
       <div className="h-screen bg-background flex flex-col overflow-hidden">
         <header className="h-14 border-b border-border/40 bg-surface/40 backdrop-blur-md flex items-center px-4 md:px-6 sticky top-0 z-40 shrink-0">
           <div className="flex items-center gap-2 md:gap-3">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className={`h-9 w-9 rounded-xl transition-all ${leftPanelOpen ? 'bg-sage/10 text-sage' : 'text-muted-foreground'}`}
-            onClick={() => setLeftPanelOpen(!leftPanelOpen)}
-            title="Document Outline"
-          >
-            <Menu className="w-4 h-4" />
-          </Button>
-          <div className="w-px h-4 bg-border/50 hidden md:block" />
           <Link
             href="/dashboard"
             className="flex items-center gap-2 text-[10px] md:text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-sage transition-all"
@@ -899,12 +914,12 @@ export default function CourseWorkspacePage() {
           </div>
 
         <div className="flex items-center gap-2 md:gap-4">
-          <div className="h-2 w-16 md:w-32 bg-surface rounded-full overflow-hidden border border-border/50 hidden sm:block">
-            <div
-              className="h-full bg-sage transition-all duration-500 ease-out"
-              style={{ width: `${((activeChunkIndex + 1) / chunks.length) * 100}%` }}
-            />
-          </div>
+            <div className="h-2 w-16 md:w-32 bg-surface rounded-full overflow-hidden border border-border/50 hidden sm:block">
+              <div
+                className="h-full bg-sage transition-all duration-500 ease-out"
+                style={{ width: `${chunks.length > 0 ? ((activeChunkIndex + 1) / chunks.length) * 100 : 0}%` }}
+              />
+            </div>
           <div className="w-px h-4 bg-border/50 hidden md:block" />
             <Button 
               variant="ghost" 
@@ -918,83 +933,33 @@ export default function CourseWorkspacePage() {
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden relative">
-        <AnimatePresence>
-          {leftPanelOpen && (
-            <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="absolute inset-y-0 left-0 z-50 w-72 lg:hidden shadow-2xl"
-            >
-              <DocumentOutline 
-                chunks={chunks} 
-                activeIndex={activeChunkIndex} 
-                onSelect={(idx) => {
-                  scrollToChunk(idx)
-                  setLeftPanelOpen(false)
-                }}
-                onClose={() => setLeftPanelOpen(false)}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {visualPanelOpen && (
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="absolute inset-y-0 right-0 z-50 w-full sm:w-80 lg:hidden shadow-2xl"
-            >
-              <VisualPanel
-                isOpen={visualPanelOpen}
-                onClose={() => setVisualPanelOpen(false)}
-                selectedText={selectedText}
-                isLoading={isVisualLoading}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-          <ResizablePanelGroup direction="horizontal" className="flex-1">
-            <ResizablePanel
-              ref={leftPanelRef}
-              defaultSize={0}
-              minSize={0}
-              maxSize={30}
-              collapsible={true}
-              onCollapse={() => setLeftPanelOpen(false)}
-              onExpand={() => setLeftPanelOpen(true)}
-              onResize={(size) => {
-                if (leftPanelOpen) {
-                  setIsLeftPanelCollapsed(size < 12)
-                }
-              }}
-              className={`${leftPanelOpen ? "block" : "hidden"} lg:block`}
-            >
-              <div className="h-full">
-                <DocumentOutline 
-                  chunks={chunks} 
-                  activeIndex={activeChunkIndex} 
-                  onSelect={scrollToChunk}
-                  onClose={() => setLeftPanelOpen(false)}
-                  isCollapsed={isLeftPanelCollapsed}
-                />
-              </div>
-            </ResizablePanel>
-
-              <ResizableHandle className={`hidden lg:flex ${!leftPanelOpen && "opacity-0 pointer-events-none"}`} />
-
-            <ResizablePanel defaultSize={60} minSize={30}>
-              <main 
-                ref={scrollContainerRef}
-                className="h-full overflow-y-auto scroll-smooth custom-scrollbar bg-background p-6"
+<div className="flex-1 flex overflow-hidden relative">
+          <AnimatePresence>
+            {visualPanelOpen && (
+              <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="absolute inset-y-0 right-0 z-50 w-full sm:w-80 lg:hidden shadow-2xl"
               >
-                <div className="max-w-[850px] mx-auto mb-6 flex items-center justify-start">
+                <VisualPanel
+                  isOpen={visualPanelOpen}
+                  onClose={() => setVisualPanelOpen(false)}
+                  selectedText={selectedText}
+                  isLoading={isVisualLoading}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+            <ResizablePanelGroup direction="horizontal" className="flex-1">
+              <ResizablePanel defaultSize={70} minSize={30}>
+                <main 
+                  ref={scrollContainerRef}
+                  className="h-full overflow-y-auto scroll-smooth custom-scrollbar bg-background p-6"
+                >
+                <div className="max-w-[1100px] mx-auto mb-6 flex items-center justify-between">
                   <div className="flex items-center gap-3 bg-elevated/40 backdrop-blur-sm px-4 py-2 rounded-xl border border-border/40 shadow-sm">
                     <Switch 
                       id="text-mode" 
@@ -1006,9 +971,39 @@ export default function CourseWorkspacePage() {
                       {showSimplified ? "Simplified Text" : "Original Text"}
                     </Label>
                   </div>
+
+                  <div className="flex items-center gap-1 bg-elevated/40 backdrop-blur-sm p-1.5 rounded-xl border border-border/40 shadow-sm">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => scrollToChunk(Math.max(0, activeChunkIndex - 1))}
+                      disabled={activeChunkIndex === 0}
+                      className="h-8 w-8 rounded-lg transition-all hover:bg-sage/10 hover:text-sage text-muted-foreground"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => scrollToChunk(Math.min(chunks.length - 1, activeChunkIndex + 1))}
+                      disabled={activeChunkIndex === chunks.length - 1}
+                      className="h-8 w-8 rounded-lg transition-all hover:bg-sage/10 hover:text-sage text-muted-foreground"
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="max-w-[850px] mx-auto bg-elevated rounded-2xl border border-border/40 shadow-sm p-8 md:p-12 min-h-full">
-                  {chunks.length === 0 ? (
+                <div className="max-w-[1100px] mx-auto bg-elevated rounded-2xl border border-border/40 shadow-sm min-h-full flex">
+                  <div className="w-72 shrink-0 border-r border-border/30 p-4 hidden md:block overflow-y-auto custom-scrollbar">
+                    <ChapterOutline
+                      chapters={chapters}
+                      activeIndex={activeChunkIndex}
+                      onSelect={scrollToChunk}
+                      onToggleComplete={handleToggleChapterComplete}
+                    />
+                  </div>
+                  <div className="flex-1 p-8 md:p-12">
+                    {chunks.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 text-center">
                       <div className="w-20 h-20 bg-sage/5 rounded-3xl border border-sage/10 flex items-center justify-center mb-8">
                         <Plus className="w-10 h-10 text-sage/40" />
@@ -1062,23 +1057,24 @@ export default function CourseWorkspacePage() {
                                    />
                                  )}
    
-                                 <div className="mt-8 h-px w-full bg-border/10" />
+                                 <div className="mt-8 h-px w-full bg-border/25" />
                                </motion.div>
                              ))}
                            </div>
    
    
-                         {chunkIndex < chunks.length - 1 && (
-                           <div className="pt-16 md:pt-24 flex items-center justify-center gap-4">
-                             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/40 to-transparent opacity-30" />
-                             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/40 to-transparent opacity-30" />
-                           </div>
-                         )}
-                       </div>
-                     ))
-                   )}
-                 </div>
-               </main>
+{chunkIndex < chunks.length - 1 && (
+                        <div className="pt-16 md:pt-24 flex items-center justify-center gap-4">
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/60 to-transparent opacity-50" />
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/60 to-transparent opacity-50" />
+                        </div>
+                      )}
+                      </div>
+                    ))
+                    )}
+                  </div>
+                </div>
+              </main>
              </ResizablePanel>
    
               <ResizableHandle className={`hidden lg:flex ${!visualPanelOpen && "opacity-0 pointer-events-none"}`} />
@@ -1111,49 +1107,6 @@ export default function CourseWorkspacePage() {
           </ResizablePanelGroup>
        </div>
  
-       <div 
-         className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 transition-all duration-300"
-         onMouseEnter={() => setIsNavHovered(true)}
-         onMouseLeave={() => setIsNavHovered(false)}
-       >
-         <div className={`bg-elevated/80 backdrop-blur-xl border border-border/40 shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-2xl flex items-center p-1.5 transition-all duration-300 ${
-           isNavHovered ? "opacity-100 scale-100" : "opacity-40 scale-95 hover:opacity-100 hover:scale-100"
-         }`}>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => scrollToChunk(Math.max(0, activeChunkIndex - 1))}
-            disabled={activeChunkIndex === 0}
-            className={`h-10 w-10 rounded-xl transition-all ${
-              isNavHovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
-            }`}
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
-
-          <div className="px-4 flex flex-col items-center min-w-[120px]">
-            <div className="h-1 w-24 bg-surface rounded-full overflow-hidden">
-              <div
-                className="h-full bg-sage transition-all duration-300"
-                style={{ width: `${((activeChunkIndex + 1) / chunks.length) * 100}%` }}
-              />
-            </div>
-          </div>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => scrollToChunk(Math.min(chunks.length - 1, activeChunkIndex + 1))}
-            disabled={activeChunkIndex === chunks.length - 1}
-            className={`h-10 w-10 rounded-xl transition-all ${
-              isNavHovered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
-            }`}
-          >
-            <ChevronRight className="w-5 h-5" />
-          </Button>
-        </div>
-      </div>
-
       <AnimatePresence>
         {toolbarPosition && (
           <SelectionToolbar

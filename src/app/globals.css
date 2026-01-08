@@ -160,6 +160,7 @@ nextjs-portal {
 }
 
 .reading-text {
+  font-family: var(--font-inter), sans-serif;
   font-size: 18px;
   line-height: 1.7;
   letter-spacing: 0.01em;
