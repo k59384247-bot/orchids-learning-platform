@@ -63,54 +63,175 @@ function SelectionToolbar({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 8 }}
-        transition={{ duration: 0.14 }}
-        className="fixed z-50 bg-elevated border border-border/40 rounded-lg shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-1 flex gap-1"
-        style={{ top: position.top - 48, left: position.left }}
-      >
+      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+      transition={{ duration: 0.15, ease: "easeOut" }}
+      className="fixed z-50 bg-elevated/95 backdrop-blur-xl border border-border/40 rounded-2xl shadow-[0_12px_48px_rgba(0,0,0,0.2)] p-2 flex gap-2 items-center min-w-[340px] h-16"
+      style={{ top: position.top - 80, left: position.left }}
+    >
       <Button
         variant="ghost"
-        size="sm"
-        className="h-9 px-3 text-xs gap-1.5 hover:bg-sage/10 hover:text-sage font-medium"
+        className="flex-1 h-12 rounded-xl text-sm gap-2 hover:bg-muted font-semibold group transition-all"
         onClick={onSimplify}
       >
-        <Sparkles className="w-3.5 h-3.5" />
-        ELI5
+        <Sparkles className="w-4 h-4 text-[#DBAC5A] group-hover:scale-110 transition-transform" />
+        Simplify
       </Button>
+      <div className="w-px h-8 bg-border/40" />
       <Button
         variant="ghost"
-        size="sm"
-        className="h-9 px-3 text-xs gap-1.5 hover:bg-sage/10 hover:text-sage font-medium"
+        className="flex-1 h-12 rounded-xl text-sm gap-2 hover:bg-muted font-semibold group transition-all"
         onClick={onExpand}
       >
-        <Maximize2 className="w-3.5 h-3.5" />
+        <Maximize2 className="w-4 h-4 text-[#3B849F] group-hover:scale-110 transition-transform" />
         Explain More
       </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-9 px-3 text-xs gap-1.5 hover:bg-sage/10 hover:text-sage font-medium"
-        onClick={onShowDiagram}
-      >
-        <LineChart className="w-3.5 h-3.5" />
-        Diagram
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-9 px-3 text-xs gap-1.5 hover:bg-sage/10 hover:text-sage font-medium"
-        onClick={onAskAI}
-      >
-        <MessageCircle className="w-3.5 h-3.5" />
-        Ask AI
-      </Button>
+      <div className="w-px h-8 bg-border/40" />
+      <div className="flex gap-1 px-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10 rounded-xl hover:bg-muted"
+          onClick={onShowDiagram}
+        >
+          <LineChart className="w-4 h-4 text-muted-foreground" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10 rounded-xl hover:bg-muted"
+          onClick={onAskAI}
+        >
+          <MessageCircle className="w-4 h-4 text-muted-foreground" />
+        </Button>
+      </div>
     </motion.div>
   )
 }
 
+function ExplanationCard({ 
+  type, 
+  onClose,
+  anchorRect,
+  content
+}: { 
+  type: 'simplify' | 'explain'; 
+  onClose: () => void;
+  anchorRect?: DOMRect;
+  content: string;
+}) {
+  const isSimplify = type === 'simplify';
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    setIsDarkMode(document.documentElement.classList.contains('dark'));
+  }, []);
+  
+  const borderColor = isSimplify ? '#DBAC5A' : '#3B849F';
+  const bgColor = isDarkMode ? '#1A1A1A' : '#F7F1EA';
+  
+  const [position, setPosition] = useState({ top: 0, left: 0, pointerX: 0, isBelow: true });
+
+  useEffect(() => {
+    if (!anchorRect) return;
+
+    const padding = 16;
+    const isMobile = window.innerWidth < 768;
+    const maxCardWidth = Math.min(window.innerWidth - 32, 450);
+
+    let left = 0;
+    let top = 0;
+    let isBelow = true;
+
+    const centerX = anchorRect.left + anchorRect.width / 2;
+    
+    // Initial guess for left, will be refined after render if needed, but for now we use fit-content logic
+    left = centerX - (maxCardWidth / 2);
+    left = Math.max(padding, Math.min(window.innerWidth - maxCardWidth - padding, left));
+    
+    // 8px overlap with the text as requested
+    top = anchorRect.bottom + window.scrollY - 8; 
+    isBelow = true;
+    
+    if (top + 150 > document.documentElement.scrollHeight) {
+      top = Math.max(0, anchorRect.top + window.scrollY - 150 + 8);
+      isBelow = false;
+    }
+
+    const pointerX = centerX - left;
+
+    setPosition({ top, left, pointerX, isBelow });
+  }, [anchorRect]);
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-start justify-start pointer-events-none overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-black/5 pointer-events-auto"
+      />
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: position.isBelow ? -10 : 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+        className="absolute w-fit max-w-[min(calc(100vw-32px),450px)] pointer-events-auto"
+        style={{ 
+          top: position.top, 
+          left: position.left 
+        }}
+      >
+        {anchorRect && (
+          <div 
+            className="absolute w-0 h-0 z-20"
+            style={{ 
+              top: position.isBelow ? "-8px" : "auto",
+              bottom: position.isBelow ? "auto" : "-8px",
+              left: `${Math.max(20, Math.min(position.pointerX, 430))}px`,
+              transform: "translateX(-50%)",
+              borderLeft: "10px solid transparent",
+              borderRight: "10px solid transparent",
+              borderBottom: position.isBelow ? `10px solid ${borderColor}` : "none",
+              borderTop: position.isBelow ? "none" : `10px solid ${borderColor}`,
+            }}
+          />
+        )}
+
+        <div 
+          className="relative rounded-[22px] shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-2 p-4"
+          style={{ 
+            backgroundColor: bgColor,
+            borderColor: borderColor
+          }}
+        >
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-bold uppercase tracking-wider opacity-40">
+                {isSimplify ? 'Simplified' : 'Explanation'}
+              </span>
+              <button 
+                onClick={onClose} 
+                className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors"
+              >
+                <X className="w-3.5 h-3.5 text-muted-foreground/60" />
+              </button>
+            </div>
+            <p className="text-[14px] leading-relaxed text-foreground/90 font-medium">
+              {content}
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 function InlineExpansion({ content, onDismiss }: { content: string; onDismiss: () => void }) {
+
   return (
     <motion.div
       initial={{ opacity: 0, height: 0 }}
@@ -528,8 +649,10 @@ export default function CourseWorkspacePage() {
   const [loading, setLoading] = useState(true)
   const [isVisualLoading, setIsVisualLoading] = useState(false)
   const [selectedText, setSelectedText] = useState("")
-  const [selectedParagraph, setSelectedParagraph] = useState<{ chunkId: string; pIndex: number } | null>(null)
+  const [selectedParagraph, setSelectedParagraph] = useState<{ chunkId: string; pIndex: number; rect?: DOMRect } | null>(null)
+  const [selectionOffsets, setSelectionOffsets] = useState<{ start: number; end: number } | null>(null)
   const [toolbarPosition, setToolbarPosition] = useState<SelectionToolbarPosition | null>(null)
+  const [activeExplanation, setActiveExplanation] = useState<'simplify' | 'explain' | null>(null)
   const [expansion, setExpansion] = useState<{ chunkId: string; pIndex: number; content: string } | null>(null)
   const [visualPanelOpen, setVisualPanelOpen] = useState(false)
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false)
@@ -679,15 +802,21 @@ export default function CourseWorkspacePage() {
   const handleTextSelection = useCallback(() => {
     const selection = window.getSelection()
     if (!selection || selection.isCollapsed) {
-      setToolbarPosition(null)
-      setSelectedText("")
+      if (!activeExplanation) {
+        setToolbarPosition(null)
+        setSelectedText("")
+        setSelectedParagraph(null)
+      }
       return
     }
 
     const text = selection.toString().trim()
     if (text.length < 10) {
-      setToolbarPosition(null)
-      setSelectedText("")
+      if (!activeExplanation) {
+        setToolbarPosition(null)
+        setSelectedText("")
+        setSelectedParagraph(null)
+      }
       return
     }
 
@@ -703,30 +832,46 @@ export default function CourseWorkspacePage() {
     if (parent) {
       const chunkId = parent.getAttribute("data-chunk-id") || ""
       const pIndex = parseInt(parent.getAttribute("data-p-index") || "0")
-      setSelectedParagraph({ chunkId, pIndex })
+      const paragraphText = parent.textContent || ""
+      
+      // Calculate selection offsets relative to the paragraph
+      const rangePre = range.cloneRange()
+      rangePre.selectNodeContents(parent)
+      rangePre.setEnd(range.startContainer, range.startOffset)
+      const start = rangePre.toString().length
+      const end = start + text.length
+
+      setSelectedParagraph({ chunkId, pIndex, rect: parent.getBoundingClientRect() })
+      setSelectionOffsets({ start, end })
     }
 
     setSelectedText(text)
     setToolbarPosition({
       top: rect.top + window.scrollY,
-      left: rect.left + rect.width / 2 - 150
+      left: rect.left + rect.width / 2 - 170
     })
-  }, [])
+  }, [activeExplanation])
 
   const handleParagraphClick = useCallback((e: React.MouseEvent, chunkId: string, pIndex: number, content: string) => {
-    // Only trigger if it's a direct click on the paragraph (white space) or the selection is collapsed
     const selection = window.getSelection()
     if (selection && !selection.isCollapsed) return
+
+    if (activeExplanation) {
+       setActiveExplanation(null)
+       setSelectedParagraph(null)
+       return
+    }
 
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     
     setSelectedText(content)
-    setSelectedParagraph({ chunkId, pIndex })
+    setSelectedParagraph({ chunkId, pIndex, rect })
+    setSelectionOffsets({ start: 0, end: content.length })
     setToolbarPosition({
       top: rect.top + window.scrollY + 20,
-      left: rect.left + rect.width / 2 - 150
+      left: rect.left + rect.width / 2 - 170
     })
-  }, [])
+  }, [activeExplanation])
 
   useEffect(() => {
     document.addEventListener("mouseup", handleTextSelection)
@@ -734,22 +879,12 @@ export default function CourseWorkspacePage() {
   }, [handleTextSelection])
 
   const handleSimplify = () => {
-    if (!selectedParagraph) return
-    setExpansion({
-      chunkId: selectedParagraph.chunkId,
-      pIndex: selectedParagraph.pIndex,
-      content: `Simplifying "${selectedText.slice(0, 30)}...": Think of it like a messy room: without putting in energy to tidy up, things naturally get more disordered. This specific concept describes the statistical inevitability of disorder.`
-    })
+    setActiveExplanation('simplify')
     setToolbarPosition(null)
   }
 
   const handleExpand = () => {
-    if (!selectedParagraph) return
-    setExpansion({
-      chunkId: selectedParagraph.chunkId,
-      pIndex: selectedParagraph.pIndex,
-      content: `Expanding on "${selectedText.slice(0, 30)}...": To understand this more deeply, we must look at the microstates. Entropy (S) is fundamentally about probability - there are vastly more ways for a system to be disordered than ordered.`
-    })
+    setActiveExplanation('explain')
     setToolbarPosition(null)
   }
 
@@ -819,6 +954,8 @@ export default function CourseWorkspacePage() {
       if (e.key === "Escape") {
         setChatOpen(false)
         setVisualPanelOpen(false)
+        setActiveExplanation(null)
+        setSelectedParagraph(null)
       }
     }
     window.addEventListener("keydown", handleKeyDown)
@@ -1034,32 +1171,55 @@ export default function CourseWorkspacePage() {
                         </div>
 
                           <div className="space-y-8">
-                            {chunk.content.split("\n\n").map((paragraph, pIndex) => (
-                              <motion.div
-                                key={pIndex}
-                                initial={{ opacity: 0, y: 10 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: "-50px" }}
-                                transition={{ duration: 0.14, delay: pIndex * 0.1 }}
-                                className="relative cursor-pointer"
-                                data-chunk-id={chunk.id}
-                                data-p-index={pIndex}
-                                onClick={(e) => handleParagraphClick(e, chunk.id, pIndex, paragraph)}
-                              >
-                                <p className="reading-text text-foreground/90 selection:bg-sage/20">
-                                  {paragraph}
-                                </p>
-                                
-                                {expansion && expansion.chunkId === chunk.id && expansion.pIndex === pIndex && (
-                                   <InlineExpansion
-                                     content={expansion.content}
-                                     onDismiss={() => setExpansion(null)}
-                                   />
-                                 )}
-   
-                                 <div className="mt-8 h-px w-full bg-border/25" />
-                               </motion.div>
-                             ))}
+                            {chunk.content.split("\n\n").map((paragraph, pIndex) => {
+                              const isActive = selectedParagraph?.chunkId === chunk.id && selectedParagraph?.pIndex === pIndex;
+                              const isDimmed = activeExplanation && !isActive;
+                              const hasSelection = isActive && selectionOffsets && activeExplanation;
+
+                              return (
+                                <motion.div
+                                  key={pIndex}
+                                  initial={{ opacity: 0, y: 10 }}
+                                  whileInView={{ opacity: 1, y: 0 }}
+                                  viewport={{ once: true, margin: "-50px" }}
+                                  animate={{ 
+                                    opacity: isDimmed ? 0.3 : 1
+                                  }}
+                                  transition={{ duration: 0.2 }}
+                                  className="relative cursor-pointer transition-all z-0"
+                                  data-chunk-id={chunk.id}
+                                  data-p-index={pIndex}
+                                  onClick={(e) => handleParagraphClick(e, chunk.id, pIndex, paragraph)}
+                                >
+                                  <p className="reading-text text-foreground/90 selection:bg-sage/20 transition-all">
+                                    {hasSelection ? (
+                                      <>
+                                        <span className="opacity-30 transition-opacity duration-300">
+                                          {paragraph.slice(0, selectionOffsets.start)}
+                                        </span>
+                                        <span className="opacity-100 transition-opacity duration-300 bg-sage/10 rounded-sm">
+                                          {paragraph.slice(selectionOffsets.start, selectionOffsets.end)}
+                                        </span>
+                                        <span className="opacity-30 transition-opacity duration-300">
+                                          {paragraph.slice(selectionOffsets.end)}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      paragraph
+                                    )}
+                                  </p>
+                                  
+                                  {expansion && expansion.chunkId === chunk.id && expansion.pIndex === pIndex && (
+                                     <InlineExpansion
+                                       content={expansion.content}
+                                       onDismiss={() => setExpansion(null)}
+                                     />
+                                   )}
+     
+                                   <div className="mt-8 h-px w-full bg-border/25" />
+                                 </motion.div>
+                               );
+                            })}
                            </div>
    
    
@@ -1115,6 +1275,24 @@ export default function CourseWorkspacePage() {
             onExpand={handleExpand}
             onShowDiagram={handleShowDiagram}
             onAskAI={handleAskAI}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {activeExplanation && (
+          <ExplanationCard 
+            type={activeExplanation} 
+            onClose={() => {
+              setActiveExplanation(null)
+              setSelectedParagraph(null)
+              setSelectionOffsets(null)
+            }}
+            anchorRect={selectedParagraph?.rect}
+            content={activeExplanation === 'simplify' 
+              ? "Entropy is nature's way of preferring messiness because there are simply more ways to be messy."
+              : "A fundamental law of nature governing energy flow. Molecules have trillions of 'messy' states but few 'ordered' ones, which is why ice melts in a warm room."
+            }
           />
         )}
       </AnimatePresence>
