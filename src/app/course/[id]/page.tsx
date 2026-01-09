@@ -7,34 +7,15 @@ import { motion, AnimatePresence } from "framer-motion"
 import {
   ArrowLeft,
   ArrowRight,
-  ChevronLeft,
-  ChevronRight,
   Sparkles,
   Maximize2,
-  LineChart,
   MessageCircle,
   X,
   Send,
-  RotateCcw,
-  Play,
-  Pause,
-  Upload,
   Plus,
-  Minus,
-  ZoomIn,
-  ZoomOut,
-  PanelLeft,
-  Cuboid,
-  Menu,
-  FileText,
   Check
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable"
 import {
   Popover,
   PopoverContent,
@@ -44,24 +25,27 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { supabase, Chunk, Course } from "@/lib/supabase"
-import type { ImperativePanelHandle } from "react-resizable-panels"
 
 type SelectionToolbarPosition = {
   top: number
   left: number
 }
 
+type ChapterItem = {
+  id: string
+  title: string
+  completed: boolean
+}
+
 function SelectionToolbar({
   position,
   onSimplify,
   onExpand,
-  onShowDiagram,
   onAskAI
 }: {
   position: SelectionToolbarPosition
   onSimplify: () => void
   onExpand: () => void
-  onShowDiagram: () => void
   onAskAI: () => void
 }) {
   return (
@@ -96,14 +80,6 @@ function SelectionToolbar({
           variant="ghost"
           size="icon"
           className="h-10 w-10 rounded-xl hover:bg-muted"
-          onClick={onShowDiagram}
-        >
-          <LineChart className="w-4 h-4 text-muted-foreground" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-10 w-10 rounded-xl hover:bg-muted"
           onClick={onAskAI}
         >
           <MessageCircle className="w-4 h-4 text-muted-foreground" />
@@ -117,26 +93,21 @@ function ExplanationCard({
   type, 
   onClose,
   anchorRect,
-  content,
-  showVisual = false,
-  onToggleVisual
+  content
 }: { 
   type: 'simplify' | 'explain'; 
   onClose: () => void;
   anchorRect?: DOMRect;
   content: string;
-  showVisual?: boolean;
-  onToggleVisual?: (show: boolean) => void;
 }) {
   const isSimplify = type === 'simplify';
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(true);
 
   useEffect(() => {
     setIsDarkMode(document.documentElement.classList.contains('dark'));
   }, []);
   
-  const bgColor = isDarkMode ? 'rgba(26, 26, 26, 0.85)' : 'rgba(247, 241, 234, 0.85)';
+  const bgColor = isDarkMode ? 'rgba(26, 26, 26, 0.98)' : 'rgba(255, 255, 255, 0.98)';
   
   const [position, setPosition] = useState({ top: 0, left: 0, pointerX: 0, isBelow: true });
 
@@ -144,20 +115,16 @@ function ExplanationCard({
     if (!anchorRect) return;
 
     const padding = 16;
-    const isMobile = window.innerWidth < 768;
-    const cardWidth = showVisual ? Math.min(window.innerWidth - 32, 850) : Math.min(window.innerWidth - 32, 450);
-
-    let left = 0;
-    let top = 0;
-    let isBelow = true;
-
+    const baseWidth = 450;
+    
+    // Calculate the base position (always centered on anchor first)
     const centerX = anchorRect.left + anchorRect.width / 2;
+    const baseLeft = centerX - (baseWidth / 2);
     
-    left = centerX - (cardWidth / 2);
-    left = Math.max(padding, Math.min(window.innerWidth - cardWidth - padding, left));
+    let left = Math.max(padding, Math.min(window.innerWidth - baseWidth - padding, baseLeft));
     
-    top = anchorRect.bottom + window.scrollY - 8; 
-    isBelow = true;
+    let top = anchorRect.bottom + window.scrollY - 8; 
+    let isBelow = true;
     
     if (top + 150 > document.documentElement.scrollHeight) {
       top = Math.max(0, anchorRect.top + window.scrollY - 150 + 8);
@@ -167,7 +134,7 @@ function ExplanationCard({
     const pointerX = centerX - left;
 
     setPosition({ top, left, pointerX, isBelow });
-  }, [anchorRect, showVisual]);
+  }, [anchorRect]);
 
   return (
     <div className="fixed inset-0 z-[60] flex items-start justify-start pointer-events-none overflow-hidden">
@@ -183,17 +150,18 @@ function ExplanationCard({
         initial={{ opacity: 0, scale: 0.9, y: position.isBelow ? -10 : 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         className="absolute pointer-events-auto"
         style={{ 
           top: position.top, 
           left: position.left,
-          width: showVisual ? 'min(calc(100vw - 32px), 850px)' : 'min(calc(100vw - 32px), 450px)'
+          width: 'min(calc(100vw - 32px), 450px)',
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), left 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
         }}
       >
         {anchorRect && (
           <div 
-            className="absolute w-0 h-0 z-20"
+            className="absolute w-0 h-0 z-20 transition-all duration-300"
             style={{ 
               top: position.isBelow ? "-8px" : "auto",
               bottom: position.isBelow ? "auto" : "-8px",
@@ -208,77 +176,28 @@ function ExplanationCard({
         )}
 
         <div 
-          className="relative rounded-[22px] shadow-[0_12px_40px_rgba(0,0,0,0.15)] border border-border/40 backdrop-blur-xl overflow-hidden flex transition-all duration-300"
+          className="relative rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-border/40 backdrop-blur-xl overflow-hidden flex min-h-[400px]"
           style={{ 
             backgroundColor: bgColor,
           }}
         >
-          {/* Text Area */}
-          <div className="flex-1 p-6 flex flex-col gap-3 min-w-[300px]">
+          {/* Main Content Area */}
+          <div className="w-full shrink-0 p-8 flex flex-col gap-4">
             <div className="flex justify-between items-center">
-              <span className="text-[10px] font-bold uppercase tracking-wider opacity-40">
-                {isSimplify ? 'Simplified' : 'Explanation'}
+              <span className="text-[10px] font-bold uppercase tracking-[0.1em] opacity-40">
+                {isSimplify ? 'Simplified Concept' : 'Key Explanation'}
               </span>
-              {!showVisual && (
-                <button 
-                  onClick={onClose} 
-                  className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors"
-                >
-                  <X className="w-3.5 h-3.5 text-muted-foreground/60" />
-                </button>
-              )}
+              <button 
+                onClick={onClose} 
+                className="p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors"
+              >
+                <X className="w-4 h-4 text-muted-foreground/60" />
+              </button>
             </div>
-            <p className="text-[15px] leading-relaxed text-foreground/90 font-medium">
+            <p className="text-[16px] leading-[1.6] text-foreground/90 font-medium">
               {content}
             </p>
           </div>
-
-          {/* Visual Area Expansion */}
-          {showVisual && (
-            <div className="w-[450px] bg-foreground/[0.02] flex flex-col relative border-l border-transparent">
-              {/* Header Icons */}
-              <div className="p-4 flex justify-between items-center z-10">
-                <LineChart className="w-4 h-4 text-sage" />
-                <div className="flex items-center gap-2">
-                  <button className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-colors">
-                    <Maximize2 className="w-3.5 h-3.5 text-muted-foreground/60" />
-                  </button>
-                  <button 
-                    onClick={onClose} 
-                    className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors"
-                  >
-                    <X className="w-3.5 h-3.5 text-muted-foreground/60" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Diagram Content */}
-              <div className="flex-1 flex flex-col min-h-[250px]">
-                <div className="flex-1 flex items-center justify-center p-4">
-                   <AnimatedDiagram 
-                     isPlaying={isPlaying} 
-                     onToggle={() => setIsPlaying(!isPlaying)} 
-                     onReset={() => setIsPlaying(true)} 
-                   />
-                </div>
-              </div>
-
-              {/* Controls Overlay (Tightly fit button group) */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center bg-elevated/90 backdrop-blur-sm border border-border/40 rounded-xl overflow-hidden shadow-lg p-0.5">
-                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-muted">
-                  <Plus className="w-4 h-4" />
-                </Button>
-                <div className="w-px h-4 bg-border/40" />
-                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-muted">
-                  <Minus className="w-4 h-4" />
-                </Button>
-                <div className="w-px h-4 bg-border/40" />
-                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-muted">
-                  <RotateCcw className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       </motion.div>
     </div>
@@ -311,125 +230,6 @@ function InlineExpansion({ content, onDismiss }: { content: string; onDismiss: (
       </div>
     </motion.div>
   )
-}
-
-function AnimatedDiagram({ isPlaying, onToggle, onReset }: { isPlaying: boolean; onToggle: () => void; onReset: () => void }) {
-  const [step, setStep] = useState(0)
-
-  useEffect(() => {
-    if (!isPlaying) return
-    const interval = setInterval(() => {
-      setStep(s => (s + 1) % 5)
-    }, 1200)
-    return () => clearInterval(interval)
-  }, [isPlaying])
-
-  return (
-    <div className="w-full h-full flex flex-col">
-      <div className="flex-1 flex items-center justify-center p-8">
-        <svg viewBox="0 0 400 250" className="w-full max-w-md">
-          <defs>
-            <linearGradient id="hot" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#ef4444" />
-              <stop offset="100%" stopColor="#f97316" />
-            </linearGradient>
-            <linearGradient id="cold" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#3b82f6" />
-              <stop offset="100%" stopColor="#06b6d4" />
-            </linearGradient>
-          </defs>
-
-          <rect x="40" y="60" width="100" height="130" rx="8" fill="url(#hot)" opacity={step >= 0 ? 1 : 0.3} />
-          <text x="90" y="130" textAnchor="middle" className="fill-white text-sm font-medium">HOT</text>
-          <text x="90" y="150" textAnchor="middle" className="fill-white/80 text-xs">High Energy</text>
-
-          <rect x="260" y="60" width="100" height="130" rx="8" fill="url(#cold)" opacity={step >= 0 ? 1 : 0.3} />
-          <text x="310" y="130" textAnchor="middle" className="fill-white text-sm font-medium">COLD</text>
-          <text x="310" y="150" textAnchor="middle" className="fill-white/80 text-xs">Low Energy</text>
-
-          {step >= 1 && (
-            <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <path d="M150 125 L250 125" stroke="var(--sage)" strokeWidth="3" strokeDasharray="8 4" />
-              <polygon points="245,120 255,125 245,130" fill="var(--sage)" />
-            </motion.g>
-          )}
-
-          {step >= 2 && (
-            <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              {[0, 1, 2].map((i) => (
-                <motion.circle
-                  key={i}
-                  cx={170 + i * 30}
-                  cy={125}
-                  r="6"
-                  fill="var(--sage)"
-                  animate={{
-                    x: [0, 20, 0],
-                    opacity: [1, 0.5, 1]
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    delay: i * 0.2
-                  }}
-                />
-              ))}
-            </motion.g>
-          )}
-
-          {step >= 3 && (
-            <motion.text
-              x="200"
-              y="200"
-              textAnchor="middle"
-              className="fill-muted-foreground text-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              Energy flows from hot to cold
-            </motion.text>
-          )}
-
-          {step >= 4 && (
-            <motion.text
-              x="200"
-              y="225"
-              textAnchor="middle"
-              className="fill-sage text-sm font-medium"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              Entropy increases
-            </motion.text>
-          )}
-        </svg>
-      </div>
-
-      <div className="h-12 border-t border-border flex items-center justify-center gap-4 px-4">
-        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onToggle}>
-          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-        </Button>
-        <div className="flex-1 max-w-[200px]">
-          <div className="h-1 bg-surface rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-sage"
-              animate={{ width: `${(step + 1) * 20}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-        </div>
-        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onReset}>
-          <RotateCcw className="w-4 h-4" />
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-type ChapterItem = {
-  id: string
-  title: string
-  completed: boolean
 }
 
 function ChapterOutline({ 
@@ -639,13 +439,11 @@ export default function CourseWorkspacePage() {
   const [chunks, setChunks] = useState<Chunk[]>([])
   const [activeChunkIndex, setActiveChunkIndex] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [isVisualLoading, setIsVisualLoading] = useState(false)
   const [selectedText, setSelectedText] = useState("")
   const [selectedParagraph, setSelectedParagraph] = useState<{ chunkId: string; pIndex: number; rect?: DOMRect } | null>(null)
   const [selectionOffsets, setSelectionOffsets] = useState<{ start: number; end: number } | null>(null)
   const [toolbarPosition, setToolbarPosition] = useState<SelectionToolbarPosition | null>(null)
   const [activeExplanation, setActiveExplanation] = useState<'simplify' | 'explain' | null>(null)
-  const [showVisualInCard, setShowVisualInCard] = useState(false)
   const [expansion, setExpansion] = useState<{ chunkId: string; pIndex: number; content: string } | null>(null)
   const [chatOpen, setChatOpen] = useState(false)
   const [showSimplified, setShowSimplified] = useState(true)
@@ -673,7 +471,6 @@ export default function CourseWorkspacePage() {
   
   const chunkRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const rightPanelRef = useRef<ImperativePanelHandle>(null)
 
   const handleToggleChapterComplete = useCallback((index: number) => {
     const chunkId = chunks[index]?.id
@@ -688,18 +485,7 @@ export default function CourseWorkspacePage() {
       }
       return next
     })
-  }, [chunks])
-
-  useEffect(() => {
-    const panel = rightPanelRef.current
-    if (panel) {
-      if (visualPanelOpen) {
-        panel.resize(30)
-      } else {
-        panel.collapse()
-      }
-    }
-  }, [visualPanelOpen])
+    }, [chunks])
 
   const fetchCourseData = useCallback(async () => {
     if (courseId.startsWith("mock-")) {
@@ -823,7 +609,6 @@ export default function CourseWorkspacePage() {
     if (parent) {
       const chunkId = parent.getAttribute("data-chunk-id") || ""
       const pIndex = parseInt(parent.getAttribute("data-p-index") || "0")
-      const paragraphText = parent.textContent || ""
       
       // Calculate selection offsets relative to the paragraph
       const rangePre = range.cloneRange()
@@ -877,14 +662,6 @@ export default function CourseWorkspacePage() {
   const handleExpand = () => {
     setActiveExplanation('explain')
     setToolbarPosition(null)
-  }
-
-  const handleShowDiagram = () => {
-    setIsVisualLoading(true)
-    setActiveExplanation('simplify')
-    setShowVisualInCard(true)
-    setToolbarPosition(null)
-    setTimeout(() => setIsVisualLoading(false), 1800)
   }
 
   const handleAskAI = () => {
@@ -945,7 +722,6 @@ export default function CourseWorkspacePage() {
       }
       if (e.key === "Escape") {
         setChatOpen(false)
-        setVisualPanelOpen(false)
         setActiveExplanation(null)
         setSelectedParagraph(null)
       }
@@ -1052,30 +828,11 @@ export default function CourseWorkspacePage() {
           </div>
       </header>
 
-<div className="flex-1 flex overflow-hidden relative">
-          <AnimatePresence>
-            {visualPanelOpen && (
-              <motion.div
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="absolute inset-y-0 right-0 z-50 w-full sm:w-80 lg:hidden shadow-2xl"
-              >
-                <VisualPanel
-                  isOpen={visualPanelOpen}
-                  onClose={() => setVisualPanelOpen(false)}
-                  selectedText={selectedText}
-                  isLoading={isVisualLoading}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-              <main 
-                ref={scrollContainerRef}
-                className="h-full overflow-y-auto scroll-smooth custom-scrollbar bg-background p-6"
-              >
+  <div className="flex-1 flex overflow-hidden relative">
+                <main 
+                  ref={scrollContainerRef}
+                  className="h-full overflow-y-auto scroll-smooth custom-scrollbar bg-background p-6"
+                >
               <div className="max-w-[1100px] mx-auto mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-3 bg-elevated/40 backdrop-blur-sm px-4 py-2 rounded-xl border border-border/40 shadow-sm">
                   <Switch 
@@ -1196,8 +953,8 @@ export default function CourseWorkspacePage() {
                                    />
                                  )}
    
-                                 <div className="mt-8 h-px w-full bg-border/25" />
-                               </motion.div>
+                                   <div className="mt-8 h-px w-full bg-border/25" />
+                                 </motion.div>
                             );
                           })}
                          </div>
@@ -1223,7 +980,6 @@ export default function CourseWorkspacePage() {
             position={toolbarPosition}
             onSimplify={handleSimplify}
             onExpand={handleExpand}
-            onShowDiagram={handleShowDiagram}
             onAskAI={handleAskAI}
           />
         )}
@@ -1237,10 +993,7 @@ export default function CourseWorkspacePage() {
                 setActiveExplanation(null)
                 setSelectedParagraph(null)
                 setSelectionOffsets(null)
-                setShowVisualInCard(false)
               }}
-              showVisual={showVisualInCard}
-              onToggleVisual={setShowVisualInCard}
               anchorRect={selectedParagraph?.rect}
               content={activeExplanation === 'simplify' 
                 ? "Entropy is nature's way of preferring messiness because there are simply more ways to be messy."
